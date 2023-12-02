@@ -37,4 +37,24 @@ export default {
         stationNone: 'Nessuna stazione selezionata',
         stationsList: 'Attiva/disattiva elenco stazioni',
     },
+
+    'nl-nl': {
+        mute: 'Dempen',
+        next: 'Volgende Station',
+        pause: 'Pauze',
+        play: 'Afspelen',
+        previous: 'Vorige Station',
+        stationNone: 'Geen Station Geselecteerd',
+        stationsList: 'Schakel Stationslijst In/Uit',
+    },
+
+    'tr-tr': {
+        mute: 'Sessiz',
+        next: 'Sonraki İstasyon',
+        pause: 'Duraklat',
+        play: 'Oynat',
+        previous: 'Önceki İstasyon',
+        stationNone: 'Hiçbir İstasyon Seçilmedi',
+        stationsList: 'İstasyon Listesini Göster/Gizle',
+    },
 };

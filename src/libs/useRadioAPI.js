@@ -93,6 +93,10 @@ export default function useRadioAPI() {
                 }
             }
 
+            if (!station) {
+                return;
+            }
+
             if (!api.hasAudioChain) {
                 api.setupAudioChain();
             }
@@ -121,6 +125,9 @@ export default function useRadioAPI() {
             }
         },
         makeStationActive(station) {
+            if (!station) {
+                return;
+            }
             this.stationActive = station;
             this.stationErrored = false;
             config.setting('active', station.name);
@@ -208,6 +215,9 @@ export default function useRadioAPI() {
             if (config.setting('reloadOnOpen')) {
                 this.loadStations(true);
             }
+            if (this.stationsList.length === 0) {
+                return;
+            }
             kiwi.showView('RadioStations');
             if (kiwi.state.ui.is_narrow) {
                 kiwi.state.$emit('statebrowser.hide');
@@ -265,12 +275,20 @@ export default function useRadioAPI() {
             this.hasAudioChain = true;
         },
         async loadStations(force) {
-            const url = new URL(config.setting('url'));
+            let url;
+
+            /* eslint-disable no-console */
+            try {
+                url = new URL(config.setting('url'), window.location);
+            } catch (e) {
+                console.error('plugin-radio: error constructing stations.json url', e);
+                return;
+            }
+
             if (force) {
                 url.searchParams.set('cb', Date.now());
             }
 
-            /* eslint-disable no-console */
             const rawJSON = await fetch(url)
                 .then((r) => {
                     if (!r.ok) {
@@ -282,17 +300,21 @@ export default function useRadioAPI() {
                     console.error('plugin-radio: error loading stations list', e.message);
                 });
 
-            if (rawJSON) {
-                try {
-                    const stationsJSON = kiwi.JSON5.parse(rawJSON);
-                    if (Array.isArray(stationsJSON) && stationsJSON.length) {
-                        this.stationsList = stationsJSON;
-                    } else {
-                        console.error('plugin-radio: error stations list is empty');
-                    }
-                } catch (e) {
-                    console.error('plugin-radio: error parsing stations list', e);
+            if (!rawJSON) {
+                return;
+            }
+
+            try {
+                const stationsJSON = kiwi.JSON5.parse(rawJSON);
+                if (Array.isArray(stationsJSON) && stationsJSON.length) {
+                    this.stationsList = stationsJSON;
+                } else {
+                    console.error('plugin-radio: error stations list is empty');
+                    return;
                 }
+            } catch (e) {
+                console.error('plugin-radio: error parsing stations list', e);
+                return;
             }
             /* eslint-enable no-console */
 
