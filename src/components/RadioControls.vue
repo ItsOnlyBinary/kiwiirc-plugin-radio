@@ -1,7 +1,7 @@
 <template>
-    <div class="p-radio-controls">
+    <div class="p-radio-controls" :class="{ 'p-radio-errored': radioAPI.stationsList.length === 0 }">
         <canvas ref="radioCanvas" />
-        <div class="p-radio-buttons" :class="{ 'p-radio-errored': radioAPI.stationsList.length === 0 }">
+        <div class="p-radio-buttons">
             <div :title="$t('plugin-radio:previous')" @click="radioAPI.skipStation(-1)">
                 <i class="fa fa-fast-backward fa-fw" aria-hidden="true" />
             </div>
@@ -166,6 +166,6 @@ onMounted(() => {
 }
 
 .p-radio-errored {
-    color: var(--brand-error, #f00);
+    color: var(--brand-error, #bf5155);
 }
 </style>
