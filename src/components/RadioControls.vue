@@ -54,7 +54,6 @@
 <script setup>
 import { onMounted, ref } from 'vue';
 
-// eslint-disable-next-line vue/no-setup-props-destructure
 const { radioAPI } = defineProps({
     radioAPI: {
         type: Object,

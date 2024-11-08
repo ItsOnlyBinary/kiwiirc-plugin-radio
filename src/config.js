@@ -12,6 +12,7 @@ export const defaultConfig = {
     autoPlay: false,
     forceVolume: false,
     reloadOnOpen: false,
+    forceShowClose: false,
 };
 
 export function setDefaults(kiwi) {

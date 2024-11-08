@@ -1,3 +1,4 @@
+/* global kiwi:true */
 import RadioBrowser from '@/components/RadioBrowser.vue';
 import RadioControls from '@/components/RadioControls.vue';
 import useRadioAPI from '@/libs/useRadioAPI';
@@ -6,8 +7,7 @@ import translations from '@/translations';
 
 import * as config from '@/config.js';
 
-// eslint-disable-next-line no-undef
-kiwi.plugin('radio', (kiwi, log) => {
+kiwi.plugin('template', (kiwi, logger) => {
     config.setDefaults(kiwi);
 
     kiwi.addTranslations(config.configBase, translations);

@@ -46,6 +46,9 @@ The plugin will then be built into `dist/plugin-radio.js`
 
     // Reload stations.json when opening the stations browser
     "reloadOnOpen": false,
+
+    // Force show the close button on stations browser
+    "forceShowClose": false,
 }
 ```
 

@@ -89,6 +89,9 @@ module.exports = (env, argv, config) => {
                                     // Object can be used for svg files
                                     object: 'data',
                                 },
+                                compilerOptions: {
+                                    comments: false,
+                                },
                             },
                         },
                     ],

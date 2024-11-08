@@ -1,10 +1,6 @@
 .DS_Store
 dist/
 node_modules/
-tests/coverage/
-
-/stations.json
-/static/stations.json
 
 # local env files
 .env.local
@@ -14,3 +10,11 @@ tests/coverage/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Editor directories and files
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw*
