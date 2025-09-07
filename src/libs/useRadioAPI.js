@@ -15,6 +15,7 @@ export default function useRadioAPI() {
         playerElement: null,
         playerPlaying: false,
         playerVolume: 0,
+        playerTitle: '',
         muteVolume: 0,
         stationActive: null,
         stationErrored: false,
@@ -22,6 +23,7 @@ export default function useRadioAPI() {
         autoPlayTriggered: false,
         hasAudioChain: false,
         userInteracted: false,
+        mediaSource: null,
 
         get playerVolumeModel() {
             return this.playerVolume;
@@ -81,7 +83,7 @@ export default function useRadioAPI() {
             }
         },
 
-        playStation(_station) {
+        playStation(_station, disableCast) {
             let station = _station;
 
             if (!station) {
@@ -102,8 +104,118 @@ export default function useRadioAPI() {
             }
 
             this.makeStationActive(station);
-            this.playerElement.src = station.source;
-            this.playerElement.play().catch(() => {});
+
+            if (this.playerElement.src) {
+                this.playerElement.src = null;
+                this.playerTitle = '';
+            }
+
+            if (!disableCast && station.type === 'cast' && 'MediaSource' in window) {
+                this.mediaSource = new MediaSource();
+                this.playerElement.src = URL.createObjectURL(this.mediaSource);
+                const fetchController = new AbortController();
+
+                this.mediaSource.addEventListener('sourceopen', () => {
+                    fetch(station.source, {
+                        mode: 'cors',
+                        headers: {
+                            'Icy-MetaData': '1',
+                        },
+                        cache: 'no-store',
+                        signal: fetchController.signal,
+                    }).then((resp) => {
+                        if (!resp.ok) {
+                            throw new Error('Unable to fetch stream', resp.status);
+                        }
+
+                        const contentType = resp.headers.get('content-type');
+                        const metaInt = parseInt(resp.headers.get('icy-metaint'), 10);
+
+                        if (!metaInt || !contentType || !resp.body) {
+                            throw new Error('Stream missing metadata', resp.status);
+                        }
+
+                        const sourceBuffer = this.mediaSource.addSourceBuffer(contentType);
+                        const reader = resp.body.getReader();
+                        const decoder = new TextDecoder();
+
+                        let buffer = new Uint8Array(0);
+                        let waitingToAppend = false;
+                        this.playerElement.play().catch(() => {});
+
+                        const processStream = () => {
+                            reader.read().then(({ value, done }) => {
+                                if (done) {
+                                    if (this.mediaSource.readyState === 'open') {
+                                        this.mediaSource.endOfStream();
+                                    }
+                                    return;
+                                }
+
+                                buffer = concatUint8Arrays(buffer, value);
+
+                                let ptr = 0;
+
+                                const processChunk = () => {
+                                    if (waitingToAppend || buffer.length - ptr < metaInt + 1) {
+                                        // Not enough data or waiting for append to complete
+                                        buffer = buffer.slice(ptr);
+                                        processStream();
+                                        return;
+                                    }
+
+                                    const audioChunk = buffer.slice(ptr, ptr + metaInt);
+                                    ptr += metaInt;
+
+                                    const metaLengthByte = buffer[ptr];
+                                    ptr += 1;
+
+                                    const metaLen = metaLengthByte * 16;
+
+                                    if (buffer.length - ptr < metaLen) {
+                                        // Not enough metadata yet
+                                        ptr -= metaLen > 0 ? metaLen + 1 : 1;
+                                        buffer = buffer.slice(ptr);
+                                        processStream();
+                                        return;
+                                    }
+
+                                    const metadata = buffer.slice(ptr, ptr + metaLen);
+                                    ptr += metaLen;
+
+                                    if (metaLen > 0) {
+                                        const text = decoder.decode(metadata);
+                                        console.log('Metadata:', text);
+                                        const match = /StreamTitle='([^']*)'/.exec(text);
+                                        if (match && match[1]) {
+                                            this.playerTitle = match[1];
+                                        }
+                                    }
+
+                                    waitingToAppend = true;
+                                    sourceBuffer.addEventListener('updateend', function onUpdateEnd() {
+                                        sourceBuffer.removeEventListener('updateend', onUpdateEnd);
+                                        waitingToAppend = false;
+                                        processChunk(); // Continue with next chunk
+                                    });
+
+                                    sourceBuffer.appendBuffer(audioChunk);
+                                };
+
+                                processChunk();
+                            });
+                        };
+
+                        processStream();
+                    }).catch((err) => {
+                        console.error('Stream error:', err);
+                        this.playStation(station, true);
+                    });
+                });
+            } else {
+                this.playerElement.src = station.source;
+                this.playerElement.play().catch(() => {});
+            }
 
             this.stationErrored = false;
             this.playerPlaying = true;
@@ -111,6 +223,7 @@ export default function useRadioAPI() {
         pauseStation() {
             this.playerElement.pause();
             this.playerPlaying = false;
+            this.playerTitle = '';
         },
         changeVolume(volume) {
             this.playerVolume = parseFloat(volume);
@@ -375,4 +488,11 @@ export default function useRadioAPI() {
     }
 
     return api;
+}
+
+function concatUint8Arrays(a, b) {
+    const result = new Uint8Array(a.length + b.length);
+    result.set(a, 0);
+    result.set(b, a.length);
+    return result;
 }

@@ -1,3 +1,4 @@
+<!-- eslint-disable vuejs-accessibility/no-distracting-elements -->
 <template>
     <div class="p-radio-controls" :class="{ 'p-radio-errored': radioAPI.stationsList.length === 0 }">
         <canvas ref="radioCanvas" />
@@ -39,6 +40,9 @@
         <div :class="{ 'p-radio-errored': radioAPI.stationErrored }" class="p-radio-station">
             {{ radioAPI.stationName || $t('plugin-radio:stationNone') }}
         </div>
+        <marquee>
+            {{ radioAPI.playerTitle }}
+        </marquee>
         <audio
             ref="radioAudio"
             preload="none"
