@@ -10,7 +10,7 @@
             ref="marqueeContentA"
             v-resizeobserver="contentObserver"
             class="p-radio-marquee-content"
-            :style="{ margin: isOverflow ? null : '0 auto', color: 'green' }"
+            :style="{ margin: isOverflow ? null : '0 auto' }"
         >
             {{ stationTitle }}
             <template v-if="songTitle">
@@ -21,10 +21,11 @@
         <template v-if="isOverflow">
             <div
                 v-resizeobserver="dividerObserver"
+                ref="marqueeDivider"
                 class="p-radio-marquee-divider"
                 :style="{ margin: `0 ${gap / 2}px` }"
             />
-            <div ref="marqueeContentB" class="p-radio-marquee-content" :style="{ color: 'red' }">
+            <div ref="marqueeContentB" class="p-radio-marquee-content">
                 {{ stationTitle }}
                 <template v-if="songTitle">
                     <div class="p-radio-marquee-divider" :style="{ margin: `0 ${gap / 2}px` }" />
@@ -36,7 +37,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+// eslint-disable-next-line no-unused-vars
+import { debounce } from 'lodash';
+import { ref, onUnmounted } from 'vue';
 
 // eslint-disable-next-line no-unused-vars
 const props = defineProps({
@@ -67,26 +70,33 @@ const marqueeDivider = ref(null);
 
 // Width observers
 const containerObserver = (entries) => {
+    console.log('containerObserver called');
     entries.forEach((entry) => {
         containerWidth = Math.ceil(entry.contentRect.width);
-        console.log('containerRef width changed:', containerWidth);
+        console.log('containerWidth width changed:', containerWidth);
         updateSizes();
     });
 };
-let contentObserver = (entries) => {
+const contentObserver = (entries) => {
+    console.log('contentObserver called');
     entries.forEach((entry) => {
         contentWidth = Math.ceil(entry.contentRect.width);
-        console.log('marqueeContentA width changed:', contentWidth);
+        console.log('contentWidth width changed:', contentWidth);
         updateSizes();
     });
 };
+// eslint-disable-next-line no-unused-vars
 const dividerObserver = (entries) => {
+    console.log('dividerObserver called');
     entries.forEach((entry) => {
         const style = getComputedStyle(entry.target);
         const marginLeft = parseFloat(style.marginLeft) || 0;
         const marginRight = parseFloat(style.marginRight) || 0;
         dividerWidth = Math.ceil(entry.contentRect.width + marginLeft + marginRight);
-        console.log('marqueeDivider width changed:', dividerWidth);
+        // dividerWidth = Math.ceil(entry.contentRect.width);
+        console.log('dividerWidth width changed:', dividerWidth);
+        // nextTick(() => updateSizes());
+        updateSizes();
     });
 };
 
@@ -99,6 +109,7 @@ let animateOffset = 0;
 let isTailA = false;
 
 const animate = () => {
+    console.log('animate called');
     animateOffset -= 1;
 
     if (!isTailA && animateOffset + contentWidth + dividerWidth <= 0) {
@@ -124,12 +135,15 @@ const animate = () => {
 
 window.animate = animate;
 
+// eslint-disable-next-line no-unused-vars
 const animateStart = () => {
+    console.log('animateStart called');
     animateStop();
     animateID = requestAnimationFrame(animate);
 };
 
 const animateStop = () => {
+    console.log('animateStop called');
     if (animateID != null) {
         cancelAnimationFrame(animateID);
         animateID = null;
@@ -139,18 +153,19 @@ const animateStop = () => {
     marqueeContentA.value.style.transform = null;
 };
 
-const updateSizes = () => {
+const updateSizes = debounce(() => {
+    console.log('updateSizes called', !!marqueeDivider.value);
     if (contentWidth > containerWidth && isOverflow.value === false) {
         isOverflow.value = true;
-        animateStart();
-    } else if (isOverflow.value === true) {
+    } else if (contentWidth <= containerWidth && isOverflow.value === true) {
         isOverflow.value = false;
         animateStop();
     }
-};
 
-onMounted(() => {
-});
+    if (isOverflow.value && !animateID && marqueeDivider.value) {
+        animateStart();
+    }
+}, 1);
 
 onUnmounted(() => {
     animateStop();
