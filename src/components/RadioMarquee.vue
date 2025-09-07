@@ -1,7 +1,14 @@
 <template>
-    <div ref="containerRef" class="p-radio-marquee" role="marquee" aria-live="polite">
+    <div
+        ref="containerRef"
+        v-resizeobserver="containerObserver"
+        class="p-radio-marquee"
+        role="marquee"
+        aria-live="polite"
+    >
         <div
             ref="marqueeContentA"
+            v-resizeobserver="contentObserver"
             class="p-radio-marquee-content"
             :style="{ margin: isOverflow ? null : '0 auto', color: 'green' }"
         >
@@ -12,7 +19,11 @@
             </template>
         </div>
         <template v-if="isOverflow">
-            <div ref="marqueeDivider" class="p-radio-marquee-divider" :style="{ margin: `0 ${gap / 2}px` }" />
+            <div
+                v-resizeobserver="dividerObserver"
+                class="p-radio-marquee-divider"
+                :style="{ margin: `0 ${gap / 2}px` }"
+            />
             <div ref="marqueeContentB" class="p-radio-marquee-content" :style="{ color: 'red' }">
                 {{ stationTitle }}
                 <template v-if="songTitle">
@@ -25,7 +36,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 
 // eslint-disable-next-line no-unused-vars
 const props = defineProps({
@@ -55,9 +66,29 @@ const marqueeContentB = ref(null);
 const marqueeDivider = ref(null);
 
 // Width observers
-let containerObserver = null;
-let contentObserver = null;
-let dividerObserver = null;
+const containerObserver = (entries) => {
+    entries.forEach((entry) => {
+        containerWidth = Math.ceil(entry.contentRect.width);
+        console.log('containerRef width changed:', containerWidth);
+        updateSizes();
+    });
+};
+let contentObserver = (entries) => {
+    entries.forEach((entry) => {
+        contentWidth = Math.ceil(entry.contentRect.width);
+        console.log('marqueeContentA width changed:', contentWidth);
+        updateSizes();
+    });
+};
+const dividerObserver = (entries) => {
+    entries.forEach((entry) => {
+        const style = getComputedStyle(entry.target);
+        const marginLeft = parseFloat(style.marginLeft) || 0;
+        const marginRight = parseFloat(style.marginRight) || 0;
+        dividerWidth = Math.ceil(entry.contentRect.width + marginLeft + marginRight);
+        console.log('marqueeDivider width changed:', dividerWidth);
+    });
+};
 
 let containerWidth = 0;
 let contentWidth = 0;
@@ -119,65 +150,9 @@ const updateSizes = () => {
 };
 
 onMounted(() => {
-    // Set up observers for containerRef and marqueeContentA
-    containerObserver = new ResizeObserver((entries) => {
-        entries.forEach((entry) => {
-            containerWidth = Math.ceil(entry.contentRect.width);
-            console.log('containerRef width changed:', containerWidth);
-            updateSizes();
-        });
-    });
-
-    contentObserver = new ResizeObserver((entries) => {
-        entries.forEach((entry) => {
-            contentWidth = Math.ceil(entry.contentRect.width);
-            console.log('marqueeContentA width changed:', contentWidth);
-            updateSizes();
-        });
-    });
-
-    dividerObserver = new ResizeObserver((entries) => {
-        entries.forEach((entry) => {
-            const style = getComputedStyle(entry.target);
-            const marginLeft = parseFloat(style.marginLeft) || 0;
-            const marginRight = parseFloat(style.marginRight) || 0;
-            dividerWidth = Math.ceil(entry.contentRect.width + marginLeft + marginRight);
-            console.log('marqueeDivider width changed:', dividerWidth);
-        });
-    });
-
-    watch(isOverflow, (value) => {
-        if (value) {
-            nextTick(() => {
-                dividerObserver.observe(marqueeDivider.value);
-            });
-        } else {
-            dividerObserver.disconnect();
-        }
-    });
-
-    if (containerRef.value) {
-        updateSizes();
-        containerObserver.observe(containerRef.value);
-    }
-
-    if (marqueeContentA.value) {
-        updateSizes();
-        contentObserver.observe(marqueeContentA.value);
-    }
 });
 
 onUnmounted(() => {
-    // Clean up observers when component is unmounted
-    if (containerObserver) {
-        containerObserver.disconnect();
-    }
-    if (contentObserver) {
-        contentObserver.disconnect();
-    }
-    if (dividerObserver) {
-        dividerObserver.disconnect();
-    }
     animateStop();
 });
 </script>
