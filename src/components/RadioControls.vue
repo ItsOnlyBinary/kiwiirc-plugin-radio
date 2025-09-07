@@ -39,7 +39,7 @@
         </div>
         <RadioMarquee
             :station-title="radioAPI.stationName || TextFormatting.t('plugin-radio:stationNone')"
-            :song-title="titleText"
+            :song-title="radioAPI.playerTitle"
             class="p-radio-title"
             :class="{ 'p-radio-errored': radioAPI.stationErrored }"
         />
@@ -82,9 +82,6 @@ onMounted(() => {
 
     radioAPI.checkForAutoplay();
 });
-
-const titleText = ref('this is just a really long test string to ensure scroll is working');
-window.titleText = titleText;
 </script>
 
 <style lang="scss">

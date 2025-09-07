@@ -1,26 +1,31 @@
 <template>
     <div ref="containerRef" class="p-radio-marquee" role="marquee" aria-live="polite">
-        <div ref="marqueeContentA" class="p-radio-marquee-content" :style="{ margin: isOverflow ? null : '0 auto' }">
-            <div v-if="currentTail === 'A'" class="p-radio-marquee-divider" :style="{ margin: `0 ${gap / 2}px` }" />
+        <div
+            ref="marqueeContentA"
+            class="p-radio-marquee-content"
+            :style="{ margin: isOverflow ? null : '0 auto', color: 'green' }"
+        >
             {{ stationTitle }}
             <template v-if="songTitle">
                 <div class="p-radio-marquee-divider" :style="{ margin: `0 ${gap / 2}px` }" />
                 {{ songTitle }}
             </template>
         </div>
-        <div v-if="isOverflow" ref="marqueeContentB" class="p-radio-marquee-content">
-            <div v-if="currentTail === 'B'" class="p-radio-marquee-divider" :style="{ margin: `0 ${gap / 2}px` }" />
-            {{ stationTitle }}
-            <template v-if="songTitle">
-                <div class="p-radio-marquee-divider" :style="{ margin: `0 ${gap / 2}px` }" />
-                {{ songTitle }}
-            </template>
-        </div>
+        <template v-if="isOverflow">
+            <div ref="marqueeDivider" class="p-radio-marquee-divider" :style="{ margin: `0 ${gap / 2}px` }" />
+            <div ref="marqueeContentB" class="p-radio-marquee-content" :style="{ color: 'red' }">
+                {{ stationTitle }}
+                <template v-if="songTitle">
+                    <div class="p-radio-marquee-divider" :style="{ margin: `0 ${gap / 2}px` }" />
+                    {{ songTitle }}
+                </template>
+            </div>
+        </template>
     </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
 
 // eslint-disable-next-line no-unused-vars
 const props = defineProps({
@@ -43,7 +48,138 @@ const props = defineProps({
 });
 
 const isOverflow = ref(false);
-const currentTail = ref('B');
+
+const containerRef = ref(null);
+const marqueeContentA = ref(null);
+const marqueeContentB = ref(null);
+const marqueeDivider = ref(null);
+
+// Width observers
+let containerObserver = null;
+let contentObserver = null;
+let dividerObserver = null;
+
+let containerWidth = 0;
+let contentWidth = 0;
+let dividerWidth = 0;
+
+let animateID = null;
+let animateOffset = 0;
+let isTailA = false;
+
+const animate = () => {
+    animateOffset -= 1;
+
+    if (!isTailA && animateOffset + contentWidth + dividerWidth <= 0) {
+        isTailA = !isTailA;
+        animateOffset = 0;
+    } else if (animateOffset + contentWidth + dividerWidth * 2 <= 0) {
+        isTailA = !isTailA;
+        animateOffset = 0;
+    }
+
+    if (!isTailA) {
+        marqueeContentA.value.style.transform = `translateX(${animateOffset}px)`;
+        marqueeDivider.value.style.transform = `translateX(${animateOffset}px)`;
+        marqueeContentB.value.style.transform = `translateX(${animateOffset}px)`;
+    } else {
+        marqueeContentA.value.style.transform = `translateX(${animateOffset + contentWidth + dividerWidth * 2}px)`;
+        marqueeDivider.value.style.transform = `translateX(${animateOffset + dividerWidth / 2}px)`;
+        marqueeContentB.value.style.transform = `translateX(${animateOffset - contentWidth - dividerWidth}px)`;
+    }
+
+    animateID = requestAnimationFrame(animate);
+};
+
+window.animate = animate;
+
+const animateStart = () => {
+    animateStop();
+    animateID = requestAnimationFrame(animate);
+};
+
+const animateStop = () => {
+    if (animateID != null) {
+        cancelAnimationFrame(animateID);
+        animateID = null;
+    }
+    animateOffset = 0;
+    isTailA = false;
+    marqueeContentA.value.style.transform = null;
+};
+
+const updateSizes = () => {
+    if (contentWidth > containerWidth && isOverflow.value === false) {
+        isOverflow.value = true;
+        animateStart();
+    } else if (isOverflow.value === true) {
+        isOverflow.value = false;
+        animateStop();
+    }
+};
+
+onMounted(() => {
+    // Set up observers for containerRef and marqueeContentA
+    containerObserver = new ResizeObserver((entries) => {
+        entries.forEach((entry) => {
+            containerWidth = Math.ceil(entry.contentRect.width);
+            console.log('containerRef width changed:', containerWidth);
+            updateSizes();
+        });
+    });
+
+    contentObserver = new ResizeObserver((entries) => {
+        entries.forEach((entry) => {
+            contentWidth = Math.ceil(entry.contentRect.width);
+            console.log('marqueeContentA width changed:', contentWidth);
+            updateSizes();
+        });
+    });
+
+    dividerObserver = new ResizeObserver((entries) => {
+        entries.forEach((entry) => {
+            const style = getComputedStyle(entry.target);
+            const marginLeft = parseFloat(style.marginLeft) || 0;
+            const marginRight = parseFloat(style.marginRight) || 0;
+            dividerWidth = Math.ceil(entry.contentRect.width + marginLeft + marginRight);
+            console.log('marqueeDivider width changed:', dividerWidth);
+        });
+    });
+
+    watch(isOverflow, (value) => {
+        if (value) {
+            nextTick(() => {
+                dividerObserver.observe(marqueeDivider.value);
+            });
+        } else {
+            dividerObserver.disconnect();
+        }
+    });
+
+    if (containerRef.value) {
+        updateSizes();
+        containerObserver.observe(containerRef.value);
+    }
+
+    if (marqueeContentA.value) {
+        updateSizes();
+        contentObserver.observe(marqueeContentA.value);
+    }
+});
+
+onUnmounted(() => {
+    // Clean up observers when component is unmounted
+    if (containerObserver) {
+        containerObserver.disconnect();
+    }
+    if (contentObserver) {
+        contentObserver.disconnect();
+    }
+    if (dividerObserver) {
+        dividerObserver.disconnect();
+    }
+    animateStop();
+});
 </script>
 
 <style lang="scss">
@@ -61,6 +197,7 @@ const currentTail = ref('B');
     }
 
     &-divider {
+        box-sizing: border-box;
         display: inline-block;
         width: 2px;
         height: 12px;
