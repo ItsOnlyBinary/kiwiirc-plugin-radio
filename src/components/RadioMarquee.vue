@@ -82,9 +82,11 @@ const createObserver = (target) => (entries) => {
     });
 };
 
+const updateInterval = 1000 / 30;
+
+let isTailA = false;
 let animateID = null;
 let animateOffset = 0;
-let isTailA = false;
 let lastTimestamp = null;
 
 const animate = (timestamp) => {
@@ -92,25 +94,29 @@ const animate = (timestamp) => {
         lastTimestamp = timestamp;
     }
     const delta = timestamp - lastTimestamp;
-    lastTimestamp = timestamp;
 
-    const movement = (props.speed / 1000) * delta;
+    if (delta >= updateInterval) {
+        const moveDelta = delta;
+        lastTimestamp = timestamp;
 
-    animateOffset -= movement;
+        const movement = (props.speed / 1000) * moveDelta;
+        animateOffset -= movement;
 
-    if (animateOffset + widths.content + (isTailA ? widths.divider * 2 : widths.divider) <= 0) {
-        isTailA = !isTailA;
-        animateOffset = 0;
-    }
+        const doubleDivider = widths.divider * 2;
+        if (animateOffset + widths.content + (isTailA ? doubleDivider : widths.divider) <= 0) {
+            isTailA = !isTailA;
+            animateOffset = 0;
+        }
 
-    if (!isTailA) {
-        marqueeContentA.value.style.transform = `translateX(${animateOffset}px)`;
-        marqueeDivider.value.style.transform = `translateX(${animateOffset}px)`;
-        marqueeContentB.value.style.transform = `translateX(${animateOffset}px)`;
-    } else {
-        marqueeContentA.value.style.transform = `translateX(${animateOffset + widths.content + widths.divider * 2}px)`;
-        marqueeDivider.value.style.transform = `translateX(${animateOffset + widths.divider / 2}px)`;
-        marqueeContentB.value.style.transform = `translateX(${animateOffset - widths.content - widths.divider}px)`;
+        if (!isTailA) {
+            marqueeContentA.value.style.transform = `translateX(${animateOffset}px)`;
+            marqueeDivider.value.style.transform = `translateX(${animateOffset}px)`;
+            marqueeContentB.value.style.transform = `translateX(${animateOffset}px)`;
+        } else {
+            marqueeContentA.value.style.transform = `translateX(${animateOffset + widths.content + doubleDivider}px)`;
+            marqueeDivider.value.style.transform = `translateX(${animateOffset + widths.divider / 2}px)`;
+            marqueeContentB.value.style.transform = `translateX(${animateOffset - widths.content - widths.divider}px)`;
+        }
     }
 
     animateID = requestAnimationFrame(animate);
@@ -126,8 +132,9 @@ const animateStop = () => {
         cancelAnimationFrame(animateID);
         animateID = null;
     }
-    animateOffset = 0;
     isTailA = false;
+    animateOffset = 0;
+    lastTimestamp = null;
     marqueeContentA.value.style.transform = null;
 };
 

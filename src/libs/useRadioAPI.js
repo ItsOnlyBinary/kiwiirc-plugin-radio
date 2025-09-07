@@ -6,6 +6,8 @@ import useEqualizer from '@/libs/useEqualizer';
 
 import * as config from '@/config.js';
 
+const streamTitleRegex = /StreamTitle='([^']*)'/;
+
 export default function useRadioAPI() {
     const { waveData, animateCanvas } = useEqualizer();
 
@@ -24,6 +26,7 @@ export default function useRadioAPI() {
         hasAudioChain: false,
         userInteracted: false,
         mediaSource: null,
+        fetchShutdown: null,
 
         get playerVolumeModel() {
             return this.playerVolume;
@@ -106,14 +109,25 @@ export default function useRadioAPI() {
             this.makeStationActive(station);
 
             if (this.playerElement.src) {
+                this.playerElement.pause();
                 this.playerElement.src = null;
                 this.playerTitle = '';
+            }
+
+            if (this.fetchShutdown) {
+                this.fetchShutdown();
             }
 
             if (!disableCast && station.type === 'cast' && 'MediaSource' in window) {
                 this.mediaSource = new MediaSource();
                 this.playerElement.src = URL.createObjectURL(this.mediaSource);
                 const fetchController = new AbortController();
+
+                this.fetchShutdown = () => {
+                    fetchController.abort();
+                    this.mediaSource = null;
+                    this.fetchShutdown = null;
+                };
 
                 this.mediaSource.addEventListener('sourceopen', () => {
                     fetch(station.source, {
@@ -131,7 +145,7 @@ export default function useRadioAPI() {
                         const contentType = resp.headers.get('content-type');
                         const metaInt = parseInt(resp.headers.get('icy-metaint'), 10);
 
-                        if (!metaInt || !contentType || !resp.body) {
+                        if (Number.isNaN(metaInt) || !contentType || !resp.body) {
                             throw new Error('Stream missing metadata', resp.status);
                         }
 
@@ -173,10 +187,10 @@ export default function useRadioAPI() {
                                     offset += 1;
 
                                     // Calculate metadata length
-                                    const metaLen = metaLengthByte * 16;
+                                    const metaLenght = metaLengthByte * 16;
 
                                     // Check if we have enough metadata
-                                    if (buffer.length - offset < metaLen) {
+                                    if (buffer.length - offset < metaLenght) {
                                         // Not enough metadata yet, save our position and get more data
                                         buffer = buffer.slice(offset - metaInt - 1); // Reset to before metaLengthByte
                                         offset = 0; // Reset pointer for next iteration
@@ -185,14 +199,13 @@ export default function useRadioAPI() {
                                     }
 
                                     // Get the metadata
-                                    const metadata = buffer.slice(offset, offset + metaLen);
-                                    offset += metaLen;
+                                    const metadata = buffer.slice(offset, offset + metaLenght);
+                                    offset += metaLenght;
 
                                     // Process metadata if available
-                                    if (metaLen > 0) {
+                                    if (metaLenght > 0) {
                                         const text = decoder.decode(metadata);
-                                        // console.log('Metadata:', text);
-                                        const match = /StreamTitle='([^']*)'/.exec(text);
+                                        const match = streamTitleRegex.exec(text);
                                         if (match) {
                                             this.playerTitle = match[1] || '';
                                         }
@@ -210,12 +223,13 @@ export default function useRadioAPI() {
                                 };
 
                                 processChunk();
+                            }).catch(() => {
+                                this.stationErrored = true;
                             });
                         };
 
                         processStream();
-                    }).catch((err) => {
-                        console.error('Stream error:', err);
+                    }).catch(() => {
                         this.playStation(station, true);
                     });
                 });
@@ -231,6 +245,10 @@ export default function useRadioAPI() {
             this.playerElement.pause();
             this.playerPlaying = false;
             this.playerTitle = '';
+
+            if (this.fetchShutdown) {
+                this.fetchShutdown();
+            }
         },
         changeVolume(volume) {
             this.playerVolume = parseFloat(volume);
