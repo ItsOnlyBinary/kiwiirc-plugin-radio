@@ -32,13 +32,16 @@
                         max="1"
                         step="0.1"
                         class="p-radio-volume-slider"
-                    />
+                    >
                 </div>
             </div>
         </div>
-        <div :class="{ 'p-radio-errored': radioAPI.stationErrored }" class="p-radio-station">
-            {{ radioAPI.stationName || $t('plugin-radio:stationNone') }}
-        </div>
+        <RadioMarquee
+            :station-title="radioAPI.stationName || TextFormatting.t('plugin-radio:stationNone')"
+            :song-title="radioAPI.playerTitle"
+            class="p-radio-title"
+            :class="{ 'p-radio-errored': radioAPI.stationErrored }"
+        />
         <audio
             ref="radioAudio"
             preload="none"
@@ -52,8 +55,16 @@
 </template>
 
 <script setup>
+/* global kiwi:true */
 import { onMounted, ref } from 'vue';
+import RadioMarquee from '@/components/RadioMarquee.vue';
 
+const TextFormatting = kiwi.require('helpers/TextFormatting');
+
+/**
+ * Define props for the component
+ * @type {Object}
+ */
 const { radioAPI } = defineProps({
     radioAPI: {
         type: Object,
@@ -61,16 +72,24 @@ const { radioAPI } = defineProps({
     },
 });
 
-const radioAudio = ref(null);
-const radioCanvas = ref(null);
+/**
+ * References to DOM elements
+ */
+const radioAudio = ref(null); // Reference to the audio element
+const radioCanvas = ref(null); // Reference to the canvas element
 
+/**
+ * Lifecycle hook that runs when the component is mounted
+ */
 onMounted(() => {
+    // Set the audio element in the radioAPI
     radioAPI.playerElement = radioAudio.value;
 
-    // Store canvas element
+    // Initialize canvas for wave visualization
     radioAPI.waveData.canvas = radioCanvas.value;
     radioAPI.waveData.canvasCtx = radioAPI.waveData.canvas.getContext('2d');
 
+    // Check for autoplay functionality
     radioAPI.checkForAutoplay();
 });
 </script>

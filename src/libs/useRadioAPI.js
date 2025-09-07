@@ -1,20 +1,33 @@
 /* global kiwi:true */
 
 import { computed, reactive, watch } from 'vue';
-
 import useEqualizer from '@/libs/useEqualizer';
-
 import * as config from '@/config.js';
 
+/**
+ * Regex pattern to extract stream title from metadata
+ * @type {RegExp}
+ */
+const streamTitleRegex = /StreamTitle='([^']*)'/;
+
+/**
+ * Main radio API function
+ * @returns {Object} - Reactive API object with all radio functionality
+ */
 export default function useRadioAPI() {
     const { waveData, animateCanvas } = useEqualizer();
 
+    /**
+     * Reactive API object containing all radio functionality
+     * @type {Object}
+     */
     const api = reactive({
         waveData,
         stationsList: [],
         playerElement: null,
         playerPlaying: false,
         playerVolume: 0,
+        playerTitle: '',
         muteVolume: 0,
         stationActive: null,
         stationErrored: false,
@@ -22,22 +35,43 @@ export default function useRadioAPI() {
         autoPlayTriggered: false,
         hasAudioChain: false,
         userInteracted: false,
+        mediaSource: null,
+        fetchShutdown: null,
 
+        /**
+         * Getter for player volume
+         * @returns {number} - Current player volume
+         */
         get playerVolumeModel() {
             return this.playerVolume;
         },
+
+        /**
+         * Setter for player volume
+         * @param {number} value - New volume value
+         */
         set playerVolumeModel(value) {
             this.changeVolume(value);
         },
 
+        /**
+         * Computed property for station name
+         * @returns {string} - Name of the active station
+         */
         stationName: computed(() => (api.stationActive ? api.stationActive.name : '')),
 
+        /**
+         * Handle play event
+         * This function is called when playback starts
+         */
         onPlay() {
+            // Cancel any existing animation frame
             if (waveData.animationFrame) {
                 window.cancelAnimationFrame(api.animationFrame);
                 waveData.animationFrame = 0;
             }
 
+            // Start the wave animation if enabled
             if (config.setting('showWave')) {
                 waveData.animationFrame = window.requestAnimationFrame(animateCanvas);
             }
@@ -47,32 +81,46 @@ export default function useRadioAPI() {
             waveData.gainNode.gain.setValueCurveAtTime(
                 [0, api.playerVolume],
                 waveData.audioCtx.currentTime,
-                2 * api.playerVolume
+                2 * (api.playerVolume > 0 ? api.playerVolume : 1)
             );
 
+            // Update media session metadata
             if (navigator.mediaSession) {
                 navigator.mediaSession.playbackState = 'playing';
                 navigator.mediaSession.metadata = new MediaMetadata({
-                    title: api.stationActive.name + ' (Kiwi IRC)',
+                    title: `${api.stationActive.name} (Kiwi IRC)`,
                 });
             }
         },
 
+        /**
+         * Handle pause event
+         * This function is called when playback is paused
+         */
         onPause() {
+            // Cancel any existing animation frame
             if (waveData.animationFrame) {
                 window.cancelAnimationFrame(waveData.animationFrame);
                 waveData.animationFrame = 0;
             }
+
+            // Clear the canvas
             waveData.canvasCtx.clearRect(0, 0, waveData.canvas.width, waveData.canvas.height);
             waveData.canvasCtx.beginPath();
 
+            // Update playback state
             api.playerPlaying = false;
             if (navigator.mediaSession) {
                 navigator.mediaSession.playbackState = 'paused';
             }
         },
 
+        /**
+         * Handle error event
+         * This function is called when an error occurs during playback
+         */
         onError() {
+            // Handle playback errors
             api.stationErrored = true;
             api.playerPlaying = false;
 
@@ -81,14 +129,20 @@ export default function useRadioAPI() {
             }
         },
 
-        playStation(_station) {
-            let station = _station;
+        /**
+         * Play a radio station
+         * @param {Object} selectedStation - The station to play
+         * @param {boolean} disableCast - Whether to disable casting
+         */
+        playStation(selectedStation, disableCast = false) {
+            let station = selectedStation;
 
+            // Select a station if none provided
             if (!station) {
                 if (this.stationActive) {
                     station = this.stationActive;
                 } else {
-                    // random station
+                    // Select a random station
                     station = this.stationsList[Math.floor(Math.random() * this.stationsList.length)];
                 }
             }
@@ -97,33 +151,218 @@ export default function useRadioAPI() {
                 return;
             }
 
+            // Setup audio chain if not already done
             if (!api.hasAudioChain) {
                 api.setupAudioChain();
             }
 
+            // Activate the selected station
             this.makeStationActive(station);
-            this.playerElement.src = station.source;
-            this.playerElement.play().catch(() => {});
 
+            // Reset player if currently playing
+            if (this.playerElement.src) {
+                this.playerElement.pause();
+                this.playerElement.src = null;
+                this.playerTitle = '';
+            }
+
+            // Clean up any existing fetch operations
+            if (this.fetchShutdown) {
+                this.fetchShutdown();
+            }
+
+            // Handle different stream types
+            if (!disableCast && station.type === 'cast' && 'MediaSource' in window) {
+                this.handleCastStream(station);
+            } else {
+                this.handleDirectStream(station);
+            }
+
+            // Update playback state
             this.stationErrored = false;
             this.playerPlaying = true;
         },
+
+        /**
+         * Handle cast stream
+         * This function sets up a MediaSource for cast streams
+         * @param {Object} station - The station to play
+         */
+        handleCastStream(station) {
+            this.mediaSource = new MediaSource();
+            this.playerElement.src = URL.createObjectURL(this.mediaSource);
+            const fetchController = new AbortController();
+
+            this.fetchShutdown = () => {
+                fetchController.abort();
+                this.mediaSource = null;
+                this.fetchShutdown = null;
+            };
+
+            this.mediaSource.addEventListener('sourceopen', () => {
+                fetch(station.source, {
+                    mode: 'cors',
+                    headers: { 'Icy-MetaData': '1' },
+                    cache: 'no-store',
+                    signal: fetchController.signal,
+                }).then((resp) => {
+                    if (!resp.ok) {
+                        throw new Error(`Unable to fetch stream: ${resp.status}`);
+                    }
+
+                    const contentType = resp.headers.get('content-type');
+                    const metaInt = parseInt(resp.headers.get('icy-metaint'), 10);
+
+                    if (Number.isNaN(metaInt) || !contentType || !resp.body) {
+                        throw new Error(`Stream missing metadata: ${resp.status}`);
+                    }
+
+                    this.processCastStream(resp, contentType, metaInt, station);
+                }).catch(() => {
+                    this.playStation(station, true);
+                });
+            });
+        },
+
+        /**
+         * Process cast stream
+         * This function handles the stream data and metadata
+         * @param {Response} resp - The fetch response
+         * @param {string} contentType - The content type of the stream
+         * @param {number} metaInt - The metadata interval
+         * @param {Object} station - The station object
+         */
+        processCastStream(resp, contentType, metaInt, station) {
+            const sourceBuffer = this.mediaSource.addSourceBuffer(contentType);
+            const reader = resp.body.getReader();
+            const decoder = new TextDecoder();
+
+            let buffer = new Uint8Array(0);
+            let waitingToAppend = false;
+            this.playerElement.play().catch(() => {});
+
+            const processStream = () => {
+                reader.read().then(({ value, done }) => {
+                    if (done) {
+                        if (this.mediaSource.readyState === 'open') {
+                            this.mediaSource.endOfStream();
+                        }
+                        return;
+                    }
+
+                    buffer = concatUint8Arrays(buffer, value);
+                    let offset = 0;
+
+                    const processChunk = () => {
+                        if (waitingToAppend || buffer.length - offset < metaInt + 1) {
+                            // Not enough data or waiting for append to complete
+                            buffer = buffer.slice(offset);
+                            processStream();
+                            return;
+                        }
+
+                        // Get the audio chunk
+                        const audioChunk = buffer.slice(offset, offset + metaInt);
+                        offset += metaInt;
+
+                        // Get the metadata length byte
+                        const metaLengthByte = buffer[offset];
+                        offset += 1;
+
+                        // Calculate metadata length
+                        const metaLength = metaLengthByte * 16;
+
+                        // Check if we have enough metadata
+                        if (buffer.length - offset < metaLength) {
+                            // Not enough metadata yet, save our position and get more data
+                            buffer = buffer.slice(offset - metaInt - 1);
+                            offset = 0;
+                            processStream();
+                            return;
+                        }
+
+                        // Get the metadata
+                        const metadata = buffer.slice(offset, offset + metaLength);
+                        offset += metaLength;
+
+                        // Process metadata if available
+                        if (metaLength > 0) {
+                            const text = decoder.decode(metadata);
+                            const match = streamTitleRegex.exec(text);
+                            if (match) {
+                                this.playerTitle = match[1] || '';
+                            }
+                        }
+
+                        // Append audio chunk to source buffer
+                        waitingToAppend = true;
+                        sourceBuffer.addEventListener('updateend', function onUpdateEnd() {
+                            sourceBuffer.removeEventListener('updateend', onUpdateEnd);
+                            waitingToAppend = false;
+                            processChunk();
+                        });
+
+                        sourceBuffer.appendBuffer(audioChunk);
+                    };
+
+                    processChunk();
+                }).catch(() => {
+                    this.stationErrored = true;
+                });
+            };
+
+            processStream();
+        },
+
+        /**
+         * Handle direct stream
+         * This function sets up a direct stream URL
+         * @param {Object} station - The station to play
+         */
+        handleDirectStream(station) {
+            this.playerElement.src = station.source;
+            this.playerElement.play().catch(() => {});
+        },
+
+        /**
+         * Pause the current station
+         */
         pauseStation() {
             this.playerElement.pause();
             this.playerPlaying = false;
+            this.playerTitle = '';
+
+            if (this.fetchShutdown) {
+                this.fetchShutdown();
+            }
         },
+
+        /**
+         * Change the player volume
+         * @param {number} volume - The new volume level
+         */
         changeVolume(volume) {
             this.playerVolume = parseFloat(volume);
         },
+
+        /**
+         * Toggle mute on/off
+         */
         toggleMute() {
             if (this.playerVolume === 0) {
-                // Player Muted
+                // Player Muted - restore previous volume
                 this.changeVolume(this.muteVolume === 0 ? config.getSetting('volume') : this.muteVolume);
             } else {
+                // Save current volume and mute
                 this.muteVolume = this.playerVolume;
                 this.changeVolume(0);
             }
         },
+
+        /**
+         * Make a station active
+         * @param {Object} station - The station to activate
+         */
         makeStationActive(station) {
             if (!station) {
                 return;
@@ -132,26 +371,42 @@ export default function useRadioAPI() {
             this.stationErrored = false;
             config.setting('active', station.name);
         },
+
+        /**
+         * Toggle a station as starred/favorited
+         * @param {Object} station - The station to toggle
+         */
         toggleStarred(station) {
             const starred = config.setting('starred').slice();
             if (this.isStarred(station)) {
-                for (let i = starred.length - 1; i >= 0; i--) {
-                    if (starred[i] === station.name) {
-                        starred.splice(i, 1);
-                        break;
-                    }
+                // Remove from favorites
+                const index = starred.indexOf(station.name);
+                if (index > -1) {
+                    starred.splice(index, 1);
                 }
             } else {
+                // Add to favorites
                 starred.push(station.name);
             }
             config.setting('starred', starred.length > 0 ? starred : null);
         },
+
+        /**
+         * Check if a station is starred
+         * @param {Object} station - The station to check
+         * @returns {boolean} - True if starred, false otherwise
+         */
         isStarred(station) {
             const starred = config.setting('starred');
             return starred.some((stationName) => stationName === station.name);
         },
+
+        /**
+         * Skip to the next or previous station
+         * @param {number} direction - 1 for next, -1 for previous
+         */
         skipStation(direction) {
-            // decide if we are skipping through stared or station list
+            // Decide if we are skipping through favorites or station list
             let stations = this.getStarred();
             if (stations.length <= 1) {
                 stations = this.stationsList;
@@ -177,6 +432,13 @@ export default function useRadioAPI() {
                 this.makeStationActive(station);
             }
         },
+
+        /**
+         * Get the index of a station in a list
+         * @param {Array} stations - The list of stations
+         * @param {Object} station - The station to find
+         * @returns {number} - The index of the station, or null if not found
+         */
         getStationIdx(stations, station) {
             if (!station) {
                 return -1;
@@ -188,6 +450,11 @@ export default function useRadioAPI() {
             }
             return null;
         },
+
+        /**
+         * Get the active station
+         * @returns {Object|null} - The active station or null if none
+         */
         getActive() {
             const active = config.setting('active');
             if (!active) {
@@ -195,22 +462,27 @@ export default function useRadioAPI() {
             }
             return this.stationsList.find((s) => s.name === active) || null;
         },
-        getStarred() {
-            const starred = config.setting('starred');
-            const out = [];
 
-            starred.forEach((stationName) => {
-                const station = this.stationsList.find((s) => s.name === stationName);
-                if (station) {
-                    out.push(station);
-                }
-            });
-            return out;
+        /**
+         * Get starred stations
+         * @returns {Array} - List of starred stations
+         */
+        getStarred() {
+            const starred = config.setting('starred') || [];
+            return this.stationsList.filter((station) => starred.includes(station.name));
         },
+
+        /**
+         * Toggle the stations list visibility
+         */
         toggleStationsList() {
             const isOpen = !!document.body.querySelector('div.p-radio-browser');
             isOpen ? this.closeStationsList() : this.openStationsList();
         },
+
+        /**
+         * Open the stations list
+         */
         openStationsList() {
             if (config.setting('reloadOnOpen')) {
                 this.loadStations(true);
@@ -223,9 +495,17 @@ export default function useRadioAPI() {
                 kiwi.state.$emit('statebrowser.hide');
             }
         },
+
+        /**
+         * Close the stations list
+         */
         closeStationsList() {
             kiwi.showView(null);
         },
+
+        /**
+         * Check and set the active station
+         */
         checkActiveStation() {
             if (this.stationActive) {
                 return;
@@ -242,14 +522,18 @@ export default function useRadioAPI() {
                 this.makeStationActive(starred[0]);
             }
         },
+
+        /**
+         * Check for autoplay functionality
+         */
         checkForAutoplay() {
             const autoPlay = config.setting('autoPlay');
             if (!autoPlay || !this.userInteracted) {
-                // autoplay disabled or user has not interacted
+                // Autoplay disabled or user has not interacted
                 return;
             }
             if (this.autoPlayTriggered) {
-                // autoplay already triggered
+                // Autoplay already triggered
                 return;
             }
             if (this.playerElement && this.stationsList.length) {
@@ -257,6 +541,10 @@ export default function useRadioAPI() {
                 this.playStation();
             }
         },
+
+        /**
+         * Setup the audio processing chain
+         */
         setupAudioChain() {
             // Setup the audio chain
             waveData.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -274,7 +562,12 @@ export default function useRadioAPI() {
 
             this.hasAudioChain = true;
         },
-        async loadStations(force) {
+
+        /**
+         * Load stations from the JSON file
+         * @param {boolean} force - Whether to force reload
+         */
+        async loadStations(force = false) {
             let url;
 
             /* eslint-disable no-console */
@@ -347,7 +640,7 @@ export default function useRadioAPI() {
                 waveData.gainNode.gain.setValueCurveAtTime(
                     [oldVolume, newVolume],
                     waveData.audioCtx.currentTime,
-                    2 * newVolume
+                    2 * (newVolume > 0 ? newVolume : 1)
                 );
             } else {
                 api.waveData.gainNode.gain.value = newVolumeFloat;
@@ -375,4 +668,17 @@ export default function useRadioAPI() {
     }
 
     return api;
+}
+
+/**
+ * Concatenate two Uint8Array buffers
+ * @param {Uint8Array} a - First buffer
+ * @param {Uint8Array} b - Second buffer
+ * @returns {Uint8Array} - Concatenated buffer
+ */
+function concatUint8Arrays(a, b) {
+    const result = new Uint8Array(a.length + b.length);
+    result.set(a, 0);
+    result.set(b, a.length);
+    return result;
 }

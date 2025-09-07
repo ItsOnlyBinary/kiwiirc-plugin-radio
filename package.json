@@ -12,6 +12,7 @@
         "lint:style": "stylelint --allow-empty-input \"./src/**/*.{vue,html,css,less,scss,sass}\""
     },
     "dependencies": {
+        "lodash": "^4.17.21",
         "vue": "^2.7.16"
     },
     "devDependencies": {
