@@ -107,15 +107,24 @@ let dividerWidth = 0;
 let animateID = null;
 let animateOffset = 0;
 let isTailA = false;
+let lastTimestamp = null;
 
-const animate = () => {
+const animate = (timestamp) => {
     console.log('animate called');
-    animateOffset -= 1;
 
-    if (!isTailA && animateOffset + contentWidth + dividerWidth <= 0) {
-        isTailA = !isTailA;
-        animateOffset = 0;
-    } else if (animateOffset + contentWidth + dividerWidth * 2 <= 0) {
+    // Calculate time delta for FPS-aware animation
+    if (!lastTimestamp) {
+        lastTimestamp = timestamp;
+    }
+    const delta = timestamp - lastTimestamp;
+    lastTimestamp = timestamp;
+
+    // Calculate movement based on speed property (pixels per second)
+    const movement = (props.speed / 1000) * delta;
+
+    animateOffset -= movement;
+
+    if (animateOffset + contentWidth + (isTailA ? dividerWidth * 2 : dividerWidth) <= 0) {
         isTailA = !isTailA;
         animateOffset = 0;
     }
