@@ -154,47 +154,47 @@ export default function useRadioAPI() {
 
                                 buffer = concatUint8Arrays(buffer, value);
 
-                                let ptr = 0;
+                                let offset = 0;
 
                                 const processChunk = () => {
-                                    if (waitingToAppend || buffer.length - ptr < metaInt + 1) {
+                                    if (waitingToAppend || buffer.length - offset < metaInt + 1) {
                                         // Not enough data or waiting for append to complete
-                                        buffer = buffer.slice(ptr);
+                                        buffer = buffer.slice(offset);
                                         processStream();
                                         return;
                                     }
 
                                     // Get the audio chunk
-                                    const audioChunk = buffer.slice(ptr, ptr + metaInt);
-                                    ptr += metaInt;
+                                    const audioChunk = buffer.slice(offset, offset + metaInt);
+                                    offset += metaInt;
 
                                     // Get the metadata length byte
-                                    const metaLengthByte = buffer[ptr];
-                                    ptr += 1;
+                                    const metaLengthByte = buffer[offset];
+                                    offset += 1;
 
                                     // Calculate metadata length
                                     const metaLen = metaLengthByte * 16;
 
                                     // Check if we have enough metadata
-                                    if (buffer.length - ptr < metaLen) {
+                                    if (buffer.length - offset < metaLen) {
                                         // Not enough metadata yet, save our position and get more data
-                                        buffer = buffer.slice(ptr - metaInt - 1); // Reset to before metaLengthByte
-                                        ptr = 0; // Reset pointer for next iteration
+                                        buffer = buffer.slice(offset - metaInt - 1); // Reset to before metaLengthByte
+                                        offset = 0; // Reset pointer for next iteration
                                         processStream();
                                         return;
                                     }
 
                                     // Get the metadata
-                                    const metadata = buffer.slice(ptr, ptr + metaLen);
-                                    ptr += metaLen;
+                                    const metadata = buffer.slice(offset, offset + metaLen);
+                                    offset += metaLen;
 
                                     // Process metadata if available
                                     if (metaLen > 0) {
                                         const text = decoder.decode(metadata);
                                         // console.log('Metadata:', text);
                                         const match = /StreamTitle='([^']*)'/.exec(text);
-                                        if (match && match[1]) {
-                                            this.playerTitle = match[1];
+                                        if (match) {
+                                            this.playerTitle = match[1] || '';
                                         }
                                     }
 

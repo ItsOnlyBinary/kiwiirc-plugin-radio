@@ -1,35 +1,35 @@
 <template>
     <div
         ref="containerRef"
-        v-resizeobserver="containerObserver"
+        v-resizeobserver="createObserver('container')"
         class="p-radio-marquee"
         role="marquee"
         aria-live="polite"
     >
         <div
             ref="marqueeContentA"
-            v-resizeobserver="contentObserver"
+            v-resizeobserver="createObserver('content')"
             class="p-radio-marquee-content"
             :style="{ margin: isOverflow ? null : '0 auto' }"
         >
-            {{ stationTitle }}
+            <span class="p-radio-marquee-station">{{ stationTitle }}</span>
             <template v-if="songTitle">
                 <div class="p-radio-marquee-divider" :style="{ margin: `0 ${gap / 2}px` }" />
-                {{ songTitle }}
+                <span class="p-radio-marquee-song">{{ songTitle }}</span>
             </template>
         </div>
         <template v-if="isOverflow">
             <div
-                v-resizeobserver="dividerObserver"
                 ref="marqueeDivider"
+                v-resizeobserver="createObserver('divider')"
                 class="p-radio-marquee-divider"
                 :style="{ margin: `0 ${gap / 2}px` }"
             />
             <div ref="marqueeContentB" class="p-radio-marquee-content">
-                {{ stationTitle }}
+                <span class="p-radio-marquee-station">{{ stationTitle }}</span>
                 <template v-if="songTitle">
                     <div class="p-radio-marquee-divider" :style="{ margin: `0 ${gap / 2}px` }" />
-                    {{ songTitle }}
+                    <span class="p-radio-marquee-song">{{ songTitle }}</span>
                 </template>
             </div>
         </template>
@@ -37,11 +37,9 @@
 </template>
 
 <script setup>
-// eslint-disable-next-line no-unused-vars
 import { debounce } from 'lodash';
 import { ref, onUnmounted } from 'vue';
 
-// eslint-disable-next-line no-unused-vars
 const props = defineProps({
     stationTitle: {
         type: String,
@@ -53,11 +51,11 @@ const props = defineProps({
     },
     gap: {
         type: Number,
-        default: 10,
+        default: 15,
     },
     speed: {
         type: Number,
-        default: 50, // pixels per second
+        default: 60,
     },
 });
 
@@ -68,41 +66,21 @@ const marqueeContentA = ref(null);
 const marqueeContentB = ref(null);
 const marqueeDivider = ref(null);
 
-// Width observers
-const containerObserver = (entries) => {
-    console.log('containerObserver called');
-    entries.forEach((entry) => {
-        containerWidth = Math.ceil(entry.contentRect.width);
-        console.log('containerWidth width changed:', containerWidth);
-        updateSizes();
-    });
+const widths = {
+    container: 0,
+    content: 0,
+    divider: 0,
 };
-const contentObserver = (entries) => {
-    console.log('contentObserver called');
-    entries.forEach((entry) => {
-        contentWidth = Math.ceil(entry.contentRect.width);
-        console.log('contentWidth width changed:', contentWidth);
-        updateSizes();
-    });
-};
-// eslint-disable-next-line no-unused-vars
-const dividerObserver = (entries) => {
-    console.log('dividerObserver called');
+
+const createObserver = (target) => (entries) => {
     entries.forEach((entry) => {
         const style = getComputedStyle(entry.target);
         const marginLeft = parseFloat(style.marginLeft) || 0;
         const marginRight = parseFloat(style.marginRight) || 0;
-        dividerWidth = Math.ceil(entry.contentRect.width + marginLeft + marginRight);
-        // dividerWidth = Math.ceil(entry.contentRect.width);
-        console.log('dividerWidth width changed:', dividerWidth);
-        // nextTick(() => updateSizes());
+        widths[target] = Math.ceil(entry.contentRect.width + marginLeft + marginRight);
         updateSizes();
     });
 };
-
-let containerWidth = 0;
-let contentWidth = 0;
-let dividerWidth = 0;
 
 let animateID = null;
 let animateOffset = 0;
@@ -110,21 +88,17 @@ let isTailA = false;
 let lastTimestamp = null;
 
 const animate = (timestamp) => {
-    console.log('animate called');
-
-    // Calculate time delta for FPS-aware animation
     if (!lastTimestamp) {
         lastTimestamp = timestamp;
     }
     const delta = timestamp - lastTimestamp;
     lastTimestamp = timestamp;
 
-    // Calculate movement based on speed property (pixels per second)
     const movement = (props.speed / 1000) * delta;
 
     animateOffset -= movement;
 
-    if (animateOffset + contentWidth + (isTailA ? dividerWidth * 2 : dividerWidth) <= 0) {
+    if (animateOffset + widths.content + (isTailA ? widths.divider * 2 : widths.divider) <= 0) {
         isTailA = !isTailA;
         animateOffset = 0;
     }
@@ -134,25 +108,20 @@ const animate = (timestamp) => {
         marqueeDivider.value.style.transform = `translateX(${animateOffset}px)`;
         marqueeContentB.value.style.transform = `translateX(${animateOffset}px)`;
     } else {
-        marqueeContentA.value.style.transform = `translateX(${animateOffset + contentWidth + dividerWidth * 2}px)`;
-        marqueeDivider.value.style.transform = `translateX(${animateOffset + dividerWidth / 2}px)`;
-        marqueeContentB.value.style.transform = `translateX(${animateOffset - contentWidth - dividerWidth}px)`;
+        marqueeContentA.value.style.transform = `translateX(${animateOffset + widths.content + widths.divider * 2}px)`;
+        marqueeDivider.value.style.transform = `translateX(${animateOffset + widths.divider / 2}px)`;
+        marqueeContentB.value.style.transform = `translateX(${animateOffset - widths.content - widths.divider}px)`;
     }
 
     animateID = requestAnimationFrame(animate);
 };
 
-window.animate = animate;
-
-// eslint-disable-next-line no-unused-vars
 const animateStart = () => {
-    console.log('animateStart called');
     animateStop();
     animateID = requestAnimationFrame(animate);
 };
 
 const animateStop = () => {
-    console.log('animateStop called');
     if (animateID != null) {
         cancelAnimationFrame(animateID);
         animateID = null;
@@ -163,18 +132,17 @@ const animateStop = () => {
 };
 
 const updateSizes = debounce(() => {
-    console.log('updateSizes called', !!marqueeDivider.value);
-    if (contentWidth > containerWidth && isOverflow.value === false) {
+    if (widths.content > widths.container && isOverflow.value === false) {
         isOverflow.value = true;
-    } else if (contentWidth <= containerWidth && isOverflow.value === true) {
+    } else if (widths.content <= widths.container && isOverflow.value === true) {
         isOverflow.value = false;
         animateStop();
     }
 
-    if (isOverflow.value && !animateID && marqueeDivider.value) {
+    if (!animateID && isOverflow.value && marqueeDivider.value) {
         animateStart();
     }
-}, 1);
+}, 0);
 
 onUnmounted(() => {
     animateStop();
@@ -186,8 +154,9 @@ onUnmounted(() => {
     position: relative;
     display: block;
     width: calc(100% - 20px);
-    margin: 0 10px;
+    margin: 4px 10px;
     overflow: hidden;
+    line-height: 100%;
     white-space: nowrap;
 
     &-content {
@@ -195,12 +164,17 @@ onUnmounted(() => {
         white-space: nowrap;
     }
 
+    &-station {
+        font-weight: 700;
+    }
+
     &-divider {
         box-sizing: border-box;
         display: inline-block;
         width: 2px;
-        height: 12px;
+        height: 1em;
         white-space: nowrap;
+        vertical-align: bottom;
         background-color: var(--comp-statebrowser-fg, #fff);
     }
 }
