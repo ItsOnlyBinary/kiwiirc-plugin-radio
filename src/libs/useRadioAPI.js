@@ -49,7 +49,7 @@ export default function useRadioAPI() {
             waveData.gainNode.gain.setValueCurveAtTime(
                 [0, api.playerVolume],
                 waveData.audioCtx.currentTime,
-                2 * api.playerVolume
+                2 * (api.playerVolume > 0 ? api.playerVolume : 1)
             );
 
             if (navigator.mediaSession) {
@@ -164,34 +164,41 @@ export default function useRadioAPI() {
                                         return;
                                     }
 
+                                    // Get the audio chunk
                                     const audioChunk = buffer.slice(ptr, ptr + metaInt);
                                     ptr += metaInt;
 
+                                    // Get the metadata length byte
                                     const metaLengthByte = buffer[ptr];
                                     ptr += 1;
 
+                                    // Calculate metadata length
                                     const metaLen = metaLengthByte * 16;
 
+                                    // Check if we have enough metadata
                                     if (buffer.length - ptr < metaLen) {
-                                        // Not enough metadata yet
-                                        ptr -= metaLen > 0 ? metaLen + 1 : 1;
-                                        buffer = buffer.slice(ptr);
+                                        // Not enough metadata yet, save our position and get more data
+                                        buffer = buffer.slice(ptr - metaInt - 1); // Reset to before metaLengthByte
+                                        ptr = 0; // Reset pointer for next iteration
                                         processStream();
                                         return;
                                     }
 
+                                    // Get the metadata
                                     const metadata = buffer.slice(ptr, ptr + metaLen);
                                     ptr += metaLen;
 
+                                    // Process metadata if available
                                     if (metaLen > 0) {
                                         const text = decoder.decode(metadata);
-                                        console.log('Metadata:', text);
+                                        // console.log('Metadata:', text);
                                         const match = /StreamTitle='([^']*)'/.exec(text);
                                         if (match && match[1]) {
                                             this.playerTitle = match[1];
                                         }
                                     }
 
+                                    // Append audio chunk to source buffer
                                     waitingToAppend = true;
                                     sourceBuffer.addEventListener('updateend', function onUpdateEnd() {
                                         sourceBuffer.removeEventListener('updateend', onUpdateEnd);

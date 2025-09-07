@@ -37,12 +37,12 @@
                 </div>
             </div>
         </div>
-        <div :class="{ 'p-radio-errored': radioAPI.stationErrored }" class="p-radio-station">
-            {{ radioAPI.stationName || $t('plugin-radio:stationNone') }}
-        </div>
-        <marquee>
-            {{ radioAPI.playerTitle }}
-        </marquee>
+        <RadioMarquee
+            :station-title="radioAPI.stationName || TextFormatting.t('plugin-radio:stationNone')"
+            :song-title="titleText"
+            class="p-radio-title"
+            :class="{ 'p-radio-errored': radioAPI.stationErrored }"
+        />
         <audio
             ref="radioAudio"
             preload="none"
@@ -56,7 +56,12 @@
 </template>
 
 <script setup>
+/* global kiwi:true */
+
 import { onMounted, ref } from 'vue';
+import RadioMarquee from '@/components/RadioMarquee.vue';
+
+const TextFormatting = kiwi.require('helpers/TextFormatting');
 
 const { radioAPI } = defineProps({
     radioAPI: {
@@ -77,6 +82,9 @@ onMounted(() => {
 
     radioAPI.checkForAutoplay();
 });
+
+const titleText = ref('this is just a really long test string to ensure scroll is working');
+window.titleText = titleText;
 </script>
 
 <style lang="scss">
