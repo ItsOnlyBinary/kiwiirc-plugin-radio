@@ -32,12 +32,10 @@ kiwi.plugin('template', (kiwi, logger) => {
 
     /**
      * Handle user interaction to enable autoplay
-     * This function is called when the user clicks or presses a key
      */
     /**
      * Handle user interaction to enable autoplay
-     * This function is called when the user clicks or presses a key
-     * It removes event listeners after the first interaction and checks for autoplay
+     * Removes event listeners after first interaction and checks for autoplay
      */
     const handleUserInteracted = () => {
         // Remove event listeners after first interaction
@@ -54,7 +52,6 @@ kiwi.plugin('template', (kiwi, logger) => {
         radioAPI.checkForAutoplay();
     };
 
-    // Add event listeners for user interaction
     // Add event listeners for user interaction
     // These listeners trigger the handleUserInteracted function
     // They are removed after the first interaction to prevent multiple triggers

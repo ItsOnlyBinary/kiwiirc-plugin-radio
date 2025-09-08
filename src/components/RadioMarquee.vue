@@ -77,8 +77,6 @@ const marqueeDivider = ref(null);
  */
 /**
  * Object to store element widths for animation calculations
- * This object holds the widths of the container, content, and divider elements
- * It is used to determine when to start/stop the animation and for animation calculations
  */
 const widths = {
     container: 0,
@@ -88,15 +86,9 @@ const widths = {
 
 /**
  * Create a resize observer for the specified target
- * @param {string} target - The target element to observe ('container', 'content', or 'divider')
- * @returns {function} - The observer function that updates widths and triggers size updates
  */
 /**
  * Create a resize observer for the specified target
- * This function creates an observer that updates the widths object
- * and triggers size updates when the element is resized
- * @param {string} target - The target element to observe ('container', 'content', or 'divider')
- * @returns {function} - The observer function that updates widths and triggers size updates
  */
 const createObserver = (target) => (entries) => {
     entries.forEach((entry) => {
@@ -123,13 +115,9 @@ let lastTimestamp = null; // Last animation timestamp
 
 /**
  * Main animation function
- * @param {number} timestamp - The current animation timestamp
  */
 /**
  * Main animation function
- * This function handles the animation loop, updating positions based on time deltas
- * It calculates movement, checks for reset conditions, and applies transformations
- * @param {number} timestamp - The current animation timestamp
  */
 const animate = (timestamp) => {
     if (!lastTimestamp) {
@@ -175,8 +163,6 @@ const animate = (timestamp) => {
  */
 /**
  * Start the animation
- * This function ensures any existing animation is stopped
- * and starts a new animation loop
  */
 const animateStart = () => {
     animateStop(); // Ensure any existing animation is stopped
@@ -188,8 +174,6 @@ const animateStart = () => {
  */
 /**
  * Stop the animation
- * This function cancels the animation frame and resets animation state
- * It also resets transformations on the elements
  */
 const animateStop = () => {
     if (animateID != null) {
@@ -204,12 +188,9 @@ const animateStop = () => {
 
 /**
  * Update sizes and check if animation should start or stop
- * This is debounced to prevent excessive calls during rapid resizing
  */
 /**
  * Update sizes and check if animation should start or stop
- * This function is debounced to prevent excessive calls during rapid resizing
- * It checks if content overflows the container and starts/stops animation as needed
  */
 const updateSizes = debounce(() => {
     // Check if content overflows container
@@ -228,7 +209,6 @@ const updateSizes = debounce(() => {
 
 /**
  * Clean up on component unmount
- * Stops the animation to prevent memory leaks
  */
 onUnmounted(() => {
     animateStop();
