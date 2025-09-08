@@ -1,5 +1,4 @@
 <template>
-    <!-- RadioMarquee.vue - Component for scrolling text display -->
     <div
         ref="containerRef"
         v-resizeobserver="createObserver('container')"
@@ -75,18 +74,12 @@ const marqueeDivider = ref(null);
 /**
  * Object to store element widths for animation calculations
  */
-/**
- * Object to store element widths for animation calculations
- */
 const widths = {
     container: 0,
     content: 0,
     divider: 0,
 };
 
-/**
- * Create a resize observer for the specified target
- */
 /**
  * Create a resize observer for the specified target
  */
@@ -115,9 +108,8 @@ let lastTimestamp = null; // Last animation timestamp
 
 /**
  * Main animation function
- */
-/**
- * Main animation function
+ * This function is called repeatedly to update the animation frame.
+ * It calculates the movement based on the speed and updates the position of the marquee content.
  */
 const animate = (timestamp) => {
     if (!lastTimestamp) {
@@ -160,9 +152,7 @@ const animate = (timestamp) => {
 
 /**
  * Start the animation
- */
-/**
- * Start the animation
+ * This function stops any existing animation and starts a new one.
  */
 const animateStart = () => {
     animateStop(); // Ensure any existing animation is stopped
@@ -171,9 +161,7 @@ const animateStart = () => {
 
 /**
  * Stop the animation
- */
-/**
- * Stop the animation
+ * This function stops the animation and resets the animation state.
  */
 const animateStop = () => {
     if (animateID != null) {
@@ -188,9 +176,8 @@ const animateStop = () => {
 
 /**
  * Update sizes and check if animation should start or stop
- */
-/**
- * Update sizes and check if animation should start or stop
+ * This function is called whenever the size of the marquee content changes.
+ * It checks if the content overflows the container and starts or stops the animation accordingly.
  */
 const updateSizes = debounce(() => {
     // Check if content overflows container
@@ -209,6 +196,7 @@ const updateSizes = debounce(() => {
 
 /**
  * Clean up on component unmount
+ * This function stops the animation when the component is unmounted.
  */
 onUnmounted(() => {
     animateStop();

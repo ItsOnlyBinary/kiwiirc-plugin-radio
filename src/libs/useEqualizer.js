@@ -5,10 +5,6 @@
  */
 export default function useEqualizer() {
     /**
-     * Wave data object containing audio context and canvas information
-     * @type {Object}
-     */
-    /**
      * Wave data object containing all necessary properties for audio visualization
      * This object holds references to the audio context, canvas, and related data
      * @type {Object}
@@ -24,10 +20,6 @@ export default function useEqualizer() {
         animationFrame: 0, // ID of the current animation frame
     };
 
-    /**
-     * Animate the canvas with audio waveform
-     * This function continuously updates the canvas to visualize the audio waveform
-     */
     /**
      * Animate the canvas with audio waveform
      * This function continuously updates the canvas to visualize the audio waveform
@@ -81,11 +73,6 @@ export default function useEqualizer() {
         }
     }
 
-    /**
-     * Return the equalizer API
-     * This function exposes the waveData and animateCanvas functions for external use
-     * @returns {Object} - Equalizer API
-     */
     /**
      * Return the equalizer API
      * This function exposes the waveData and animateCanvas functions for external use

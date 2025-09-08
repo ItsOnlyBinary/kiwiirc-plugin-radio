@@ -1,5 +1,4 @@
 <!-- eslint-disable vuejs-accessibility/no-distracting-elements -->
-<!-- RadioControls.vue - Component for controlling radio playback and display -->
 <template>
     <div class="p-radio-controls" :class="{ 'p-radio-errored': radioAPI.stationsList.length === 0 }">
         <canvas ref="radioCanvas" />
@@ -77,15 +76,9 @@ const { radioAPI } = defineProps({
 /**
  * References to DOM elements
  */
-/**
- * References to DOM elements
- */
 const radioAudio = ref(null); // Reference to the audio element
 const radioCanvas = ref(null); // Reference to the canvas element
 
-/**
- * Lifecycle hook that runs when the component is mounted
- */
 /**
  * Lifecycle hook that runs when the component is mounted
  */
