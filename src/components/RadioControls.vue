@@ -1,4 +1,5 @@
 <!-- eslint-disable vuejs-accessibility/no-distracting-elements -->
+<!-- RadioControls.vue - Component for controlling radio playback and display -->
 <template>
     <div class="p-radio-controls" :class="{ 'p-radio-errored': radioAPI.stationsList.length === 0 }">
         <canvas ref="radioCanvas" />
@@ -57,12 +58,15 @@
 
 <script setup>
 /* global kiwi:true */
-
 import { onMounted, ref } from 'vue';
 import RadioMarquee from '@/components/RadioMarquee.vue';
 
 const TextFormatting = kiwi.require('helpers/TextFormatting');
 
+/**
+ * Define props for the component
+ * @type {Object}
+ */
 const { radioAPI } = defineProps({
     radioAPI: {
         type: Object,
@@ -70,16 +74,24 @@ const { radioAPI } = defineProps({
     },
 });
 
-const radioAudio = ref(null);
-const radioCanvas = ref(null);
+/**
+ * References to DOM elements
+ */
+const radioAudio = ref(null); // Reference to the audio element
+const radioCanvas = ref(null); // Reference to the canvas element
 
+/**
+ * Lifecycle hook that runs when the component is mounted
+ */
 onMounted(() => {
+    // Set the audio element in the radioAPI
     radioAPI.playerElement = radioAudio.value;
 
-    // Store canvas element
+    // Initialize canvas for wave visualization
     radioAPI.waveData.canvas = radioCanvas.value;
     radioAPI.waveData.canvasCtx = radioAPI.waveData.canvas.getContext('2d');
 
+    // Check for autoplay functionality
     radioAPI.checkForAutoplay();
 });
 </script>

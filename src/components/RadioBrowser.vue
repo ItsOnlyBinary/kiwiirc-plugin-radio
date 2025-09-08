@@ -1,4 +1,5 @@
 <template>
+    <!-- RadioBrowser.vue - Component for displaying radio stations -->
     <div class="p-radio-browser">
         <div
             class="p-radio-browser-close"
@@ -44,11 +45,14 @@
 
 <script setup>
 /* global kiwi:true */
-
 import * as config from '@/config.js';
 
 const TextFormatting = kiwi.require('helpers/TextFormatting');
 
+/**
+ * Define props for the component
+ * @type {Object}
+ */
 const { radioAPI } = defineProps({
     radioAPI: {
         type: Object,
@@ -56,10 +60,23 @@ const { radioAPI } = defineProps({
     },
 });
 
+/**
+ * Add a class to an image when it's loaded
+ * @param {Event} event - The image load event
+ */
 const imageLoaded = (event) => (event.target.classList.add('p-radio-loaded'));
 
+/**
+ * Format channels as HTML links
+ * @param {Array} channels - Array of channel names
+ * @returns {string} - HTML string with formatted channels
+ */
 const channelsHtml = (channels) => (channels || []).map((chan) => TextFormatting.linkifyChannels(chan)).join(', ');
 
+/**
+ * Handle channel click events
+ * @param {Event} event - The click event
+ */
 const channelClick = (event) => {
     const channelName = event.target.getAttribute('data-channel-name');
     if (channelName) {
@@ -67,17 +84,23 @@ const channelClick = (event) => {
         const buffer = kiwi.state.getBufferByName(network.id, channelName);
 
         if (!buffer) {
+            // Add buffer and join channel if it doesn't exist
             kiwi.state.addBuffer(network.id, channelName);
             network.ircClient.join(channelName);
         }
 
         if (buffer || kiwi.state.ui.is_narrow) {
+            // Set active buffer and close station list
             kiwi.state.setActiveBuffer(network.id, channelName);
             radioAPI.closeStationsList();
         }
     }
 };
 
+/**
+ * Play a station and close the station list on narrow screens
+ * @param {Object} station - The station to play
+ */
 const playStationClose = (station) => {
     radioAPI.playStation(station);
     if (kiwi.state.ui.is_narrow) {

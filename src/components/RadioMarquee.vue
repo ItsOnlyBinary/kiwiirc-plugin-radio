@@ -1,4 +1,5 @@
 <template>
+    <!-- RadioMarquee.vue - Component for scrolling text display -->
     <div
         ref="containerRef"
         v-resizeobserver="createObserver('container')"
@@ -40,6 +41,9 @@
 import { debounce } from 'lodash';
 import { ref, onUnmounted } from 'vue';
 
+/**
+ * Define component props
+ */
 const props = defineProps({
     stationTitle: {
         type: String,
@@ -59,19 +63,29 @@ const props = defineProps({
     },
 });
 
+/**
+ * Reactive references
+ */
 const isOverflow = ref(false);
-
 const containerRef = ref(null);
 const marqueeContentA = ref(null);
 const marqueeContentB = ref(null);
 const marqueeDivider = ref(null);
 
+/**
+ * Object to store element widths
+ */
 const widths = {
     container: 0,
     content: 0,
     divider: 0,
 };
 
+/**
+ * Create a resize observer for the specified target
+ * @param {string} target - The target element to observe
+ * @returns {function} - The observer function
+ */
 const createObserver = (target) => (entries) => {
     entries.forEach((entry) => {
         const style = getComputedStyle(entry.target);
@@ -82,13 +96,23 @@ const createObserver = (target) => (entries) => {
     });
 };
 
+/**
+ * Animation update interval
+ */
 const updateInterval = 1000 / 30;
 
+/**
+ * Animation state variables
+ */
 let isTailA = false;
 let animateID = null;
 let animateOffset = 0;
 let lastTimestamp = null;
 
+/**
+ * Main animation function
+ * @param {number} timestamp - The current animation timestamp
+ */
 const animate = (timestamp) => {
     if (!lastTimestamp) {
         lastTimestamp = timestamp;
@@ -122,11 +146,17 @@ const animate = (timestamp) => {
     animateID = requestAnimationFrame(animate);
 };
 
+/**
+ * Start the animation
+ */
 const animateStart = () => {
     animateStop();
     animateID = requestAnimationFrame(animate);
 };
 
+/**
+ * Stop the animation
+ */
 const animateStop = () => {
     if (animateID != null) {
         cancelAnimationFrame(animateID);
@@ -138,6 +168,9 @@ const animateStop = () => {
     marqueeContentA.value.style.transform = null;
 };
 
+/**
+ * Update sizes and check if animation should start or stop
+ */
 const updateSizes = debounce(() => {
     if (widths.content > widths.container && isOverflow.value === false) {
         isOverflow.value = true;
@@ -151,6 +184,9 @@ const updateSizes = debounce(() => {
     }
 }, 0);
 
+/**
+ * Clean up on component unmount
+ */
 onUnmounted(() => {
     animateStop();
 });
