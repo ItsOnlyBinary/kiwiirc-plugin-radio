@@ -64,6 +64,12 @@ const { radioAPI } = defineProps({
  * Add a class to an image when it's loaded
  * @param {Event} event - The image load event
  */
+/**
+ * Add a class to an image when it's loaded
+ * This function is called when an image is loaded
+ * It adds a class to the image to indicate it has been loaded
+ * @param {Event} event - The image load event
+ */
 const imageLoaded = (event) => (event.target.classList.add('p-radio-loaded'));
 
 /**
@@ -71,10 +77,24 @@ const imageLoaded = (event) => (event.target.classList.add('p-radio-loaded'));
  * @param {Array} channels - Array of channel names
  * @returns {string} - HTML string with formatted channels
  */
+/**
+ * Format channels as HTML links
+ * This function takes an array of channel names and formats them as HTML links
+ * It uses the TextFormatting.linkifyChannels function to format each channel
+ * @param {Array} channels - Array of channel names
+ * @returns {string} - HTML string with formatted channels
+ */
 const channelsHtml = (channels) => (channels || []).map((chan) => TextFormatting.linkifyChannels(chan)).join(', ');
 
 /**
  * Handle channel click events
+ * @param {Event} event - The click event
+ */
+/**
+ * Handle channel click events
+ * This function is called when a channel link is clicked
+ * It adds the buffer and joins the channel if it doesn't exist
+ * It sets the active buffer and closes the station list
  * @param {Event} event - The click event
  */
 const channelClick = (event) => {
@@ -99,6 +119,11 @@ const channelClick = (event) => {
 
 /**
  * Play a station and close the station list on narrow screens
+ * @param {Object} station - The station to play
+ */
+/**
+ * Play a station and close the station list on narrow screens
+ * This function plays a station and closes the station list if the screen is narrow
  * @param {Object} station - The station to play
  */
 const playStationClose = (station) => {

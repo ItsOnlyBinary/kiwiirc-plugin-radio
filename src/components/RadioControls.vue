@@ -77,11 +77,21 @@ const { radioAPI } = defineProps({
 /**
  * References to DOM elements
  */
+/**
+ * References to DOM elements
+ * radioAudio: Reference to the audio element used for playback
+ * radioCanvas: Reference to the canvas element used for wave visualization
+ */
 const radioAudio = ref(null); // Reference to the audio element
 const radioCanvas = ref(null); // Reference to the canvas element
 
 /**
  * Lifecycle hook that runs when the component is mounted
+ */
+/**
+ * Lifecycle hook that runs when the component is mounted
+ * This function sets up the audio element and canvas for wave visualization
+ * It also checks for autoplay functionality
  */
 onMounted(() => {
     // Set the audio element in the radioAPI

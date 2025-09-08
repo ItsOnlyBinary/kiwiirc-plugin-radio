@@ -4,11 +4,23 @@ import { computed, reactive, watch } from 'vue';
 import useEqualizer from '@/libs/useEqualizer';
 import * as config from '@/config.js';
 
+/**
+ * Regex pattern to extract stream title from metadata
+ * @type {RegExp}
+ */
 const streamTitleRegex = /StreamTitle='([^']*)'/;
 
+/**
+ * Main radio API function
+ * @returns {Object} - Reactive API object with all radio functionality
+ */
 export default function useRadioAPI() {
     const { waveData, animateCanvas } = useEqualizer();
 
+    /**
+     * Reactive API object containing all radio functionality
+     * @type {Object}
+     */
     const api = reactive({
         waveData,
         stationsList: [],
@@ -26,15 +38,32 @@ export default function useRadioAPI() {
         mediaSource: null,
         fetchShutdown: null,
 
+        /**
+         * Getter for player volume
+         * @returns {number} - Current player volume
+         */
         get playerVolumeModel() {
             return this.playerVolume;
         },
+
+        /**
+         * Setter for player volume
+         * @param {number} value - New volume value
+         */
         set playerVolumeModel(value) {
             this.changeVolume(value);
         },
 
+        /**
+         * Computed property for station name
+         * @returns {string} - Name of the active station
+         */
         stationName: computed(() => (api.stationActive ? api.stationActive.name : '')),
 
+        /**
+         * Handle play event
+         * This function is called when playback starts
+         */
         onPlay() {
             // Cancel any existing animation frame
             if (waveData.animationFrame) {
@@ -64,6 +93,10 @@ export default function useRadioAPI() {
             }
         },
 
+        /**
+         * Handle pause event
+         * This function is called when playback is paused
+         */
         onPause() {
             // Cancel any existing animation frame
             if (waveData.animationFrame) {
@@ -82,6 +115,10 @@ export default function useRadioAPI() {
             }
         },
 
+        /**
+         * Handle error event
+         * This function is called when an error occurs during playback
+         */
         onError() {
             // Handle playback errors
             api.stationErrored = true;
@@ -92,6 +129,11 @@ export default function useRadioAPI() {
             }
         },
 
+        /**
+         * Play a radio station
+         * @param {Object} selectedStation - The station to play
+         * @param {boolean} disableCast - Whether to disable casting
+         */
         playStation(selectedStation, disableCast = false) {
             let station = selectedStation;
 
@@ -141,6 +183,11 @@ export default function useRadioAPI() {
             this.playerPlaying = true;
         },
 
+        /**
+         * Handle cast stream
+         * This function sets up a MediaSource for cast streams
+         * @param {Object} station - The station to play
+         */
         handleCastStream(station) {
             this.mediaSource = new MediaSource();
             this.playerElement.src = URL.createObjectURL(this.mediaSource);
@@ -177,6 +224,14 @@ export default function useRadioAPI() {
             });
         },
 
+        /**
+         * Process cast stream
+         * This function handles the stream data and metadata
+         * @param {Response} resp - The fetch response
+         * @param {string} contentType - The content type of the stream
+         * @param {number} metaInt - The metadata interval
+         * @param {Object} station - The station object
+         */
         processCastStream(resp, contentType, metaInt, station) {
             const sourceBuffer = this.mediaSource.addSourceBuffer(contentType);
             const reader = resp.body.getReader();
@@ -259,11 +314,19 @@ export default function useRadioAPI() {
             processStream();
         },
 
+        /**
+         * Handle direct stream
+         * This function sets up a direct stream URL
+         * @param {Object} station - The station to play
+         */
         handleDirectStream(station) {
             this.playerElement.src = station.source;
             this.playerElement.play().catch(() => {});
         },
 
+        /**
+         * Pause the current station
+         */
         pauseStation() {
             this.playerElement.pause();
             this.playerPlaying = false;
@@ -274,10 +337,17 @@ export default function useRadioAPI() {
             }
         },
 
+        /**
+         * Change the player volume
+         * @param {number} volume - The new volume level
+         */
         changeVolume(volume) {
             this.playerVolume = parseFloat(volume);
         },
 
+        /**
+         * Toggle mute on/off
+         */
         toggleMute() {
             if (this.playerVolume === 0) {
                 // Player Muted - restore previous volume
@@ -289,6 +359,10 @@ export default function useRadioAPI() {
             }
         },
 
+        /**
+         * Make a station active
+         * @param {Object} station - The station to activate
+         */
         makeStationActive(station) {
             if (!station) {
                 return;
@@ -298,6 +372,10 @@ export default function useRadioAPI() {
             config.setting('active', station.name);
         },
 
+        /**
+         * Toggle a station as starred/favorited
+         * @param {Object} station - The station to toggle
+         */
         toggleStarred(station) {
             const starred = config.setting('starred').slice();
             if (this.isStarred(station)) {
@@ -313,11 +391,20 @@ export default function useRadioAPI() {
             config.setting('starred', starred.length > 0 ? starred : null);
         },
 
+        /**
+         * Check if a station is starred
+         * @param {Object} station - The station to check
+         * @returns {boolean} - True if starred, false otherwise
+         */
         isStarred(station) {
             const starred = config.setting('starred');
             return starred.some((stationName) => stationName === station.name);
         },
 
+        /**
+         * Skip to the next or previous station
+         * @param {number} direction - 1 for next, -1 for previous
+         */
         skipStation(direction) {
             // Decide if we are skipping through favorites or station list
             let stations = this.getStarred();
@@ -346,6 +433,12 @@ export default function useRadioAPI() {
             }
         },
 
+        /**
+         * Get the index of a station in a list
+         * @param {Array} stations - The list of stations
+         * @param {Object} station - The station to find
+         * @returns {number} - The index of the station, or null if not found
+         */
         getStationIdx(stations, station) {
             if (!station) {
                 return -1;
@@ -358,6 +451,10 @@ export default function useRadioAPI() {
             return null;
         },
 
+        /**
+         * Get the active station
+         * @returns {Object|null} - The active station or null if none
+         */
         getActive() {
             const active = config.setting('active');
             if (!active) {
@@ -366,16 +463,26 @@ export default function useRadioAPI() {
             return this.stationsList.find((s) => s.name === active) || null;
         },
 
+        /**
+         * Get starred stations
+         * @returns {Array} - List of starred stations
+         */
         getStarred() {
             const starred = config.setting('starred') || [];
             return this.stationsList.filter((station) => starred.includes(station.name));
         },
 
+        /**
+         * Toggle the stations list visibility
+         */
         toggleStationsList() {
             const isOpen = !!document.body.querySelector('div.p-radio-browser');
             isOpen ? this.closeStationsList() : this.openStationsList();
         },
 
+        /**
+         * Open the stations list
+         */
         openStationsList() {
             if (config.setting('reloadOnOpen')) {
                 this.loadStations(true);
@@ -389,10 +496,16 @@ export default function useRadioAPI() {
             }
         },
 
+        /**
+         * Close the stations list
+         */
         closeStationsList() {
             kiwi.showView(null);
         },
 
+        /**
+         * Check and set the active station
+         */
         checkActiveStation() {
             if (this.stationActive) {
                 return;
@@ -410,6 +523,9 @@ export default function useRadioAPI() {
             }
         },
 
+        /**
+         * Check for autoplay functionality
+         */
         checkForAutoplay() {
             const autoPlay = config.setting('autoPlay');
             if (!autoPlay || !this.userInteracted) {
@@ -426,6 +542,9 @@ export default function useRadioAPI() {
             }
         },
 
+        /**
+         * Setup the audio processing chain
+         */
         setupAudioChain() {
             // Setup the audio chain
             waveData.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -444,6 +563,10 @@ export default function useRadioAPI() {
             this.hasAudioChain = true;
         },
 
+        /**
+         * Load stations from the JSON file
+         * @param {boolean} force - Whether to force reload
+         */
         async loadStations(force = false) {
             let url;
 
@@ -547,6 +670,12 @@ export default function useRadioAPI() {
     return api;
 }
 
+/**
+ * Concatenate two Uint8Array buffers
+ * @param {Uint8Array} a - First buffer
+ * @param {Uint8Array} b - Second buffer
+ * @returns {Uint8Array} - Concatenated buffer
+ */
 function concatUint8Arrays(a, b) {
     const result = new Uint8Array(a.length + b.length);
     result.set(a, 0);

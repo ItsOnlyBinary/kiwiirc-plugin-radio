@@ -3,7 +3,6 @@
  * Main plugin file for the radio functionality
  * This file sets up the plugin, initializes the API, and registers UI components
  */
-
 import RadioBrowser from '@/components/RadioBrowser.vue';
 import RadioControls from '@/components/RadioControls.vue';
 import useRadioAPI from '@/libs/useRadioAPI';
@@ -35,6 +34,11 @@ kiwi.plugin('template', (kiwi, logger) => {
      * Handle user interaction to enable autoplay
      * This function is called when the user clicks or presses a key
      */
+    /**
+     * Handle user interaction to enable autoplay
+     * This function is called when the user clicks or presses a key
+     * It removes event listeners after the first interaction and checks for autoplay
+     */
     const handleUserInteracted = () => {
         // Remove event listeners after first interaction
         kiwi.off('document.clicked', handleUserInteracted);
@@ -51,6 +55,9 @@ kiwi.plugin('template', (kiwi, logger) => {
     };
 
     // Add event listeners for user interaction
+    // Add event listeners for user interaction
+    // These listeners trigger the handleUserInteracted function
+    // They are removed after the first interaction to prevent multiple triggers
     kiwi.on('document.clicked', handleUserInteracted);
     kiwi.on('document.keydown', handleUserInteracted);
 });
