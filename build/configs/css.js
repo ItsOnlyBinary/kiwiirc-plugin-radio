@@ -82,9 +82,8 @@ const cssRules = [
     },
 ];
 
-module.exports = (env, argv, config) =>
-    merge(config, {
-        module: {
-            rules: cssRules,
-        },
-    });
+module.exports = (env, argv, config) => merge(config, {
+    module: {
+        rules: cssRules,
+    },
+});

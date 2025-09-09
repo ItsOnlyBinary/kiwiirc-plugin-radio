@@ -1,237 +1,225 @@
+
 <template>
-    <div
-        ref="containerRef"
-        v-resizeobserver="createObserver('container')"
-        class="p-radio-marquee"
-        role="marquee"
-        aria-live="polite"
-    >
+    <div ref="marquee" v-resizeobserver="containerResize" class="p-radio-marquee" role="marquee" aria-live="polite">
         <div
-            ref="marqueeContentA"
-            v-resizeobserver="createObserver('content')"
-            class="p-radio-marquee-content"
-            :style="{ margin: isOverflow ? null : '0 auto' }"
+            ref="track"
+            class="p-radio-marquee-track"
+            :style="{
+                '--marquee-gap': `${gap}px`,
+                '--min-width': `${containerWidth}px`,
+            }"
         >
-            <span class="p-radio-marquee-station">{{ stationName }}</span>
-            <template v-if="songTitle">
-                <div class="p-radio-marquee-divider" :style="{ margin: `0 ${gap / 2}px` }" />
-                <span class="p-radio-marquee-song">{{ songTitle }}</span>
-            </template>
-        </div>
-        <template v-if="isOverflow">
-            <div
-                ref="marqueeDivider"
-                v-resizeobserver="createObserver('divider')"
-                class="p-radio-marquee-divider"
-                :style="{ margin: `0 ${gap / 2}px` }"
-            />
-            <div ref="marqueeContentB" class="p-radio-marquee-content">
-                <span class="p-radio-marquee-station">{{ stationName }}</span>
-                <template v-if="songTitle">
-                    <div class="p-radio-marquee-divider" :style="{ margin: `0 ${gap / 2}px` }" />
-                    <span class="p-radio-marquee-song">{{ songTitle }}</span>
-                </template>
+            <div class="p-radio-marquee-content">
+                <span class="p-radio-marquee-station">{{ leadingText.station }}</span>
+                <span class="p-radio-marquee-song">{{ leadingText.song }}</span>
             </div>
-        </template>
+            <div class="p-radio-marquee-content">
+                <span class="p-radio-marquee-station">{{ followingText.station }}</span>
+                <span class="p-radio-marquee-song">{{ followingText.song }}</span>
+            </div>
+            <div
+                v-if="nextText.length"
+                v-resizeobserver="nextTextResize"
+                class="p-radio-marquee-content-next"
+            >
+                <span class="p-radio-marquee-station">{{ nextText[0].station }}</span>
+                <span class="p-radio-marquee-song">{{ nextText[0].song }}</span>
+            </div>
+        </div>
     </div>
 </template>
 
 <script setup>
-import { debounce } from 'lodash';
-import { ref, onUnmounted } from 'vue';
+import { ref, onMounted, watch, onBeforeUnmount } from 'vue';
 
-import * as config from '@/config.js';
-
-/**
- * Define component props
- */
+// ========== Props ==========
 const props = defineProps({
-    stationName: {
-        type: String,
-        required: true,
-    },
-    songTitle: {
-        type: String,
-        required: false,
-    },
-    gap: {
-        type: Number,
-        default: 15,
-    },
-    speed: {
-        type: Number,
-        default: 60,
-    },
+    stationName: { type: String, required: true },
+    songTitle: { type: String, required: false },
+    gap: { type: Number, default: 20 },
+    speed: { type: Number, default: 60 },
 });
 
-/**
- * Reactive references for DOM elements
- */
-const isOverflow = ref(false);
-const containerRef = ref(null);
-const marqueeContentA = ref(null);
-const marqueeContentB = ref(null);
-const marqueeDivider = ref(null);
+// ========== State ==========
+const marquee = ref(null);
+const track = ref(null);
+const containerWidth = ref(0);
 
-/**
- * Object to store element widths for animation calculations
- */
-const widths = {
-    container: 0,
-    content: 0,
-    divider: 0,
-};
+// Text content
+const leadingText = ref(createMarqueeInfo());
+const leadingTextWidth = ref(0);
+const followingText = ref(createMarqueeInfo());
+const followingTextWidth = ref(0);
+const nextText = ref([]);
+const nextTextWidth = ref(0);
+let nextTextWidthUpdated = false;
 
-/**
- * Create a resize observer for the specified target
- */
-const createObserver = (target) => (entries) => {
-    entries.forEach((entry) => {
-        const style = getComputedStyle(entry.target);
-        const marginLeft = parseFloat(style.marginLeft) || 0;
-        const marginRight = parseFloat(style.marginRight) || 0;
-        widths[target] = Math.ceil(entry.contentRect.width + marginLeft + marginRight);
-        updateSizes();
-    });
-};
+let animation = null;
 
-/**
- * Animation update interval
- */
-const updateInterval = 1000 / config.getSetting('animationsFPS');
+// ========== Utility Functions ==========
+function createMarqueeInfo(station = '', song = '') {
+    return { station, song };
+}
 
-/**
- * Animation state variables
- */
-let isTailA = false; // Tracks which content block is at the end
-let animateID = null; // Animation frame ID
-let animateOffset = 0; // Current animation offset
-let lastTimestamp = null; // Last animation timestamp
+function addNextText(station, song) {
+    const next = createMarqueeInfo(
+        song ? `${station}\u00A0•\u00A0` : station,
+        song,
+    );
 
-/**
- * Main animation function
- * This function is called repeatedly to update the animation frame.
- * It calculates the movement based on the speed and updates the position of the marquee content.
- */
-const animate = (timestamp) => {
-    if (!lastTimestamp) {
-        lastTimestamp = timestamp;
+    if (nextText.value.length === 2) {
+        nextText.value[1] = next;
+    } else {
+        nextText.value.push(next);
     }
-    const delta = timestamp - lastTimestamp;
+}
 
-    if (delta >= updateInterval) {
-        const moveDelta = delta;
-        lastTimestamp = timestamp;
+// ========== Animation Functions ==========
+function createAnimation(iterations = 1) {
+    if (animation) {
+        animation.removeEventListener('finish', onAnimationEnd);
+        animation.cancel();
+    }
 
-        // Calculate movement based on speed
-        const movement = (props.speed / 1000) * moveDelta;
-        animateOffset -= movement;
+    const offset = leadingTextWidth.value + props.gap;
+    const durationMS = (offset / props.speed) * 1000;
 
-        // Calculate double divider width for animation logic
-        const doubleDivider = widths.divider * 2;
+    const effect = new KeyframeEffect(
+        track.value,
+        [
+            { transform: 'translateX(0)' },
+            { transform: `translateX(-${offset}px)` },
+        ],
+        {
+            duration: durationMS,
+            iterations,
+            easing: 'linear',
+        }
+    );
 
-        // Check if we need to reset the animation position
-        if (animateOffset + widths.content + (isTailA ? doubleDivider : widths.divider) <= 0) {
-            isTailA = !isTailA; // Switch which content block is at the end
-            animateOffset = 0; // Reset offset
+    animation = new Animation(effect, document.timeline);
+    animation.addEventListener('finish', onAnimationEnd);
+    animation.play();
+}
+
+function animationNext() {
+    if (!leadingText.value.station) {
+        Object.assign(leadingText.value, nextText.value.shift());
+        leadingTextWidth.value = nextTextWidth.value;
+        nextTextWidthUpdated = false;
+
+        if (leadingTextWidth.value > containerWidth.value) {
+            createAnimation(Infinity);
         }
 
-        // Apply transformations based on animation state
-        if (!isTailA) {
-            marqueeContentA.value.style.transform = `translateX(${animateOffset}px)`;
-            marqueeDivider.value.style.transform = `translateX(${animateOffset}px)`;
-            marqueeContentB.value.style.transform = `translateX(${animateOffset}px)`;
-        } else {
-            marqueeContentA.value.style.transform = `translateX(${animateOffset + widths.content + doubleDivider}px)`;
-            marqueeDivider.value.style.transform = `translateX(${animateOffset + widths.divider / 2}px)`;
-            marqueeContentB.value.style.transform = `translateX(${animateOffset - widths.content - widths.divider}px)`;
+    } else {
+        followingText.value = nextText.value.shift();
+        followingTextWidth.value = nextTextWidth.value;
+        nextTextWidthUpdated = false;
+
+        createAnimation();
+    }
+}
+
+function onAnimationEnd() {
+    if (leadingText.value !== followingText.value) {
+        Object.assign(leadingText.value, followingText.value);
+        leadingTextWidth.value = followingTextWidth.value;
+    }
+
+    if (leadingTextWidth.value <= containerWidth.value) {
+        Object.assign(followingText.value, createMarqueeInfo());
+        followingTextWidth.value = 0;
+    }
+
+    if (nextText.value.length && nextTextWidthUpdated) {
+        animationNext();
+    } else if (leadingTextWidth.value > containerWidth.value) {
+        createAnimation(Infinity);
+    }
+}
+
+// ========== Resize Observers ==========
+function containerResize(entries) {
+    if (entries.length !== 1) return;
+    containerWidth.value = entries[0].contentRect.width;
+}
+
+function nextTextResize(entries) {
+    if (entries.length !== 1) return;
+
+    nextTextWidth.value = entries[0].contentRect.width;
+    nextTextWidthUpdated = true;
+
+    if (!nextText.value.length) return;
+
+    if (!animation || animation.playState !== 'running') {
+        setTimeout(animationNext, 1);
+    } else {
+        const timing = animation.effect.getComputedTiming();
+        if (timing.iterations === Infinity) {
+            animation.effect.updateTiming({ iterations: timing.currentIteration + 1 });
         }
     }
+}
 
-    // Request next animation frame
-    animateID = requestAnimationFrame(animate);
-};
+// ========== Watchers ==========
+const watchStationAndSong = watch(
+    () => [props.stationName, props.songTitle],
+    () => addNextText(props.stationName, props.songTitle)
+);
 
-/**
- * Start the animation
- * This function stops any existing animation and starts a new one.
- */
-const animateStart = () => {
-    animateStop(); // Ensure any existing animation is stopped
-    animateID = requestAnimationFrame(animate); // Start new animation
-};
+// ========== Lifecycle ==========
+onMounted(() => {
+    const marqueeRect = marquee.value.getBoundingClientRect();
+    containerWidth.value = marqueeRect.width;
+    leadingTextWidth.value = marqueeRect.width;
 
-/**
- * Stop the animation
- * This function stops the animation and resets the animation state.
- */
-const animateStop = () => {
-    if (animateID != null) {
-        cancelAnimationFrame(animateID);
-        animateID = null;
+    addNextText(props.stationName, props.songTitle);
+});
+
+onBeforeUnmount(() => {
+    watchStationAndSong(); // stop watcher
+    if (animation) {
+        animation.removeEventListener('finish', onAnimationEnd);
+        animation.cancel();
     }
-    isTailA = false;
-    animateOffset = 0;
-    lastTimestamp = null;
-    marqueeContentA.value.style.transform = null; // Reset transformations
-};
-
-/**
- * Update sizes and check if animation should start or stop
- * This function is called whenever the size of the marquee content changes.
- * It checks if the content overflows the container and starts or stops the animation accordingly.
- */
-const updateSizes = debounce(() => {
-    // Check if content overflows container
-    if (widths.content > widths.container && isOverflow.value === false) {
-        isOverflow.value = true;
-    } else if (widths.content <= widths.container && isOverflow.value === true) {
-        isOverflow.value = false;
-        animateStop(); // Stop animation if content fits
-    }
-
-    // Start animation if needed
-    if (!animateID && isOverflow.value && marqueeDivider.value) {
-        animateStart();
-    }
-}, 1);
-
-/**
- * Clean up on component unmount
- * This function stops the animation when the component is unmounted.
- */
-onUnmounted(() => {
-    animateStop();
 });
 </script>
 
 <style lang="scss">
 .p-radio-marquee {
     position: relative;
-    display: block;
+    display: flex;
+    align-items: center;
     width: calc(100% - 20px);
     margin: 4px 10px;
     overflow: hidden;
     line-height: 100%;
     white-space: nowrap;
 
-    &-content {
-        display: inline-block;
-        white-space: nowrap;
+    &-track {
+        display: flex;
+        flex-shrink: 0;
+    }
+
+    &-content,
+    &-content-next {
+        display: flex;
+        flex-shrink: 0;
+        justify-content: center;
+        min-width: var(--min-width);
+        padding-right: var(--marquee-gap, 20px);
+    }
+
+    &-content-next {
+        position: absolute;
+        left: 100%;
     }
 
     &-station {
         font-weight: 700;
     }
-
-    &-divider {
-        box-sizing: border-box;
-        display: inline-block;
-        width: 2px;
-        height: 1em;
-        vertical-align: bottom;
-        white-space: nowrap;
-        background-color: var(--comp-statebrowser-fg, #fff);
-    }
 }
+
 </style>

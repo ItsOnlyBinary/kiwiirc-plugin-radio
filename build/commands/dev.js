@@ -42,7 +42,7 @@ const argv = minimist(process.argv.slice(2));
 
         console.log('   App running at:');
         if (host === 'localhost' || host.substring(0, 4) === '127.' || host === '0.0.0.0') {
-            const hostText = host === '127.0.0.1' ? 'localhost' : host;
+            const hostText = (host === '127.0.0.1') ? 'localhost' : host;
             console.log(`     - Local:   ${chalk.cyan(`${protocol}://${hostText}:${port}`)}`);
 
             if (host !== '0.0.0.0') {

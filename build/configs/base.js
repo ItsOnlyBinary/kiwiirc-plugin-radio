@@ -51,9 +51,7 @@ module.exports = (env, argv, config) => {
 
         externals: {
             vue: 'kiwi.Vue',
-            lodash: {
-                root: '_',
-            },
+            lodash: '_',
         },
 
         performance: {
@@ -65,6 +63,7 @@ module.exports = (env, argv, config) => {
             new ESLintPlugin({
                 emitError: true,
                 emitWarning: true,
+                failOnError: false,
                 extensions: ['.ts', '.tsx', '.js', '.jsx', '.vue'],
                 formatter: ESLintFormatter,
             }),

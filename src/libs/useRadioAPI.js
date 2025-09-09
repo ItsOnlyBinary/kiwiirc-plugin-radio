@@ -159,16 +159,16 @@ export default function useRadioAPI() {
             // Activate the selected station
             this.makeStationActive(station);
 
+            // Clean up any existing fetch operations
+            if (this.fetchShutdown) {
+                this.fetchShutdown();
+            }
+
             // Reset player if currently playing
             if (this.playerElement.src) {
                 this.playerElement.pause();
                 this.playerElement.src = null;
                 this.songTitle = '';
-            }
-
-            // Clean up any existing fetch operations
-            if (this.fetchShutdown) {
-                this.fetchShutdown();
             }
 
             // Handle different stream types
@@ -306,8 +306,10 @@ export default function useRadioAPI() {
                     };
 
                     processChunk();
-                }).catch(() => {
-                    this.stationErrored = true;
+                }).catch((err) => {
+                    if (err.name !== 'AbortError') {
+                        this.stationErrored = true;
+                    }
                 });
             };
 
