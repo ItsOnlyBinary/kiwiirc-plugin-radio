@@ -32,16 +32,27 @@
                         max="1"
                         step="0.1"
                         class="p-radio-volume-slider"
-                    >
+                    />
                 </div>
             </div>
         </div>
         <RadioMarquee
-            :station-title="radioAPI.stationName || TextFormatting.t('plugin-radio:stationNone')"
-            :song-title="radioAPI.playerTitle"
-            class="p-radio-title"
+            v-if="config.setting('showMarquee')"
+            :station-name="radioAPI.stationName || TextFormatting.t('plugin-radio:stationNone')"
+            :song-title="radioAPI.songTitle"
+            class="p-radio-marquee"
             :class="{ 'p-radio-errored': radioAPI.stationErrored }"
         />
+        <div v-else class="p-radio-title">
+            <div>
+                {{ radioAPI.stationName || TextFormatting.t('plugin-radio:stationNone') }}
+            </div>
+            <transition-expand>
+                <div v-if="radioAPI.songTitle">
+                    {{ radioAPI.songTitle }}
+                </div>
+            </transition-expand>
+        </div>
         <audio
             ref="radioAudio"
             preload="none"
@@ -58,6 +69,8 @@
 /* global kiwi:true */
 import { onMounted, ref } from 'vue';
 import RadioMarquee from '@/components/RadioMarquee.vue';
+
+import * as config from '@/config.js';
 
 const TextFormatting = kiwi.require('helpers/TextFormatting');
 
@@ -181,6 +194,10 @@ onMounted(() => {
         border: none;
         border-radius: 50%;
     }
+}
+
+.p-radio-title {
+    padding: 0 6px;
 }
 
 .p-radio-errored {

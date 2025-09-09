@@ -27,7 +27,7 @@ export default function useRadioAPI() {
         playerElement: null,
         playerPlaying: false,
         playerVolume: 0,
-        playerTitle: '',
+        songTitle: '',
         muteVolume: 0,
         stationActive: null,
         stationErrored: false,
@@ -163,7 +163,7 @@ export default function useRadioAPI() {
             if (this.playerElement.src) {
                 this.playerElement.pause();
                 this.playerElement.src = null;
-                this.playerTitle = '';
+                this.songTitle = '';
             }
 
             // Clean up any existing fetch operations
@@ -290,7 +290,7 @@ export default function useRadioAPI() {
                             const text = decoder.decode(metadata);
                             const match = streamTitleRegex.exec(text);
                             if (match) {
-                                this.playerTitle = match[1] || '';
+                                this.songTitle = match[1] || '';
                             }
                         }
 
@@ -330,7 +330,7 @@ export default function useRadioAPI() {
         pauseStation() {
             this.playerElement.pause();
             this.playerPlaying = false;
-            this.playerTitle = '';
+            this.songTitle = '';
 
             if (this.fetchShutdown) {
                 this.fetchShutdown();

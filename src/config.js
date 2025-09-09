@@ -14,15 +14,16 @@ export const configBase = 'plugin-radio';
  * @type {Object}
  */
 export const defaultConfig = {
-    url: `${basePath}${configBase}/stations.json`, // URL to the stations JSON file
-    volume: 0.4, // Default volume level (40%)
-    starred: [], // List of starred stations (empty by default)
-    active: '', // Currently active station (none by default)
-    showWave: true, // Show waveform visualization (enabled by default)
-    autoPlay: false, // Autoplay stations (disabled by default)
-    forceVolume: false, // Force volume level (disabled by default)
-    reloadOnOpen: false, // Reload stations on open (disabled by default)
-    forceShowClose: false, // Force show close button (disabled by default)
+    url: `${basePath}${configBase}/stations.json`,
+    volume: 0.4,
+    starred: [],
+    active: '',
+    showWave: true,
+    showMarquee: true,
+    autoPlay: false,
+    forceVolume: false,
+    reloadOnOpen: false,
+    forceShowClose: false,
     animationsFPS: 30,
 };
 

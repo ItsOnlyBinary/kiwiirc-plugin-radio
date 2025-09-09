@@ -12,7 +12,7 @@
             class="p-radio-marquee-content"
             :style="{ margin: isOverflow ? null : '0 auto' }"
         >
-            <span class="p-radio-marquee-station">{{ stationTitle }}</span>
+            <span class="p-radio-marquee-station">{{ stationName }}</span>
             <template v-if="songTitle">
                 <div class="p-radio-marquee-divider" :style="{ margin: `0 ${gap / 2}px` }" />
                 <span class="p-radio-marquee-song">{{ songTitle }}</span>
@@ -26,7 +26,7 @@
                 :style="{ margin: `0 ${gap / 2}px` }"
             />
             <div ref="marqueeContentB" class="p-radio-marquee-content">
-                <span class="p-radio-marquee-station">{{ stationTitle }}</span>
+                <span class="p-radio-marquee-station">{{ stationName }}</span>
                 <template v-if="songTitle">
                     <div class="p-radio-marquee-divider" :style="{ margin: `0 ${gap / 2}px` }" />
                     <span class="p-radio-marquee-song">{{ songTitle }}</span>
@@ -46,7 +46,7 @@ import * as config from '@/config.js';
  * Define component props
  */
 const props = defineProps({
-    stationTitle: {
+    stationName: {
         type: String,
         required: true,
     },
@@ -229,8 +229,8 @@ onUnmounted(() => {
         display: inline-block;
         width: 2px;
         height: 1em;
-        vertical-align: bottom;
         white-space: nowrap;
+        vertical-align: bottom;
         background-color: var(--comp-statebrowser-fg, #fff);
     }
 }
