@@ -19,9 +19,11 @@ module.exports = {
         'color-function-notation': null,
         'declaration-block-no-redundant-longhand-properties': null,
         'declaration-no-important': true,
+        'declaration-property-value-no-unknown': null, // breaks css round()"
         'media-feature-range-notation': null,
         'no-descending-specificity': null,
         'number-max-precision': null,
+        'property-no-vendor-prefix': null,
         'scss/at-rule-no-unknown': [
             true,
             {
@@ -46,6 +48,7 @@ module.exports = {
         ],
         'scss/double-slash-comment-empty-line-before': null,
         'scss/double-slash-comment-whitespace-inside': null,
+        'scss/no-global-function-names': null,
         'selector-class-pattern': null,
         'shorthand-property-no-redundant-values': null,
 

@@ -1,7 +1,12 @@
-/* eslint-disable global-require */
-
 module.exports = {
-    rules: {
-        'class-name-prefix': require('./class-name-prefix'),
+    configs: {
+        recommended: [{
+            plugins: {
+                kiwiirc: require('./class-name-prefix'),
+            },
+            rules: {
+                'kiwiirc/class-name-prefix': 'warn',
+            },
+        }],
     },
 };

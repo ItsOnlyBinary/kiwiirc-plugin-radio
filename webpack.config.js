@@ -1,3 +1,4 @@
+const fs = require('fs');
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 
 const devConfig = require('./build/configs/dev');
@@ -23,6 +24,10 @@ module.exports = (env, argv) => {
         config = devConfig(env, argv, config);
     } else {
         config = prodConfig(env, argv, config);
+    }
+
+    if (argv['write-config']) {
+        fs.writeFileSync('webpack.effective.json', JSON.stringify(config, null, 4));
     }
 
     return config;
