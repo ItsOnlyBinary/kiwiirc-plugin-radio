@@ -1,16 +1,16 @@
 /* global kiwi:true */
 /**
- * Configuration module for the radio plugin
- * This file defines default settings and provides functions to manage configuration
+ * Configuration module for the radio plugin.
+ * Defines default settings and provides functions to manage configuration.
  */
 
 // Base path of the script (determined at runtime)
-// Configuration base name used for namespacing settings
+// Configuration base name for namespacing settings
 export const basePath = getBasePath();
 export const configBase = 'plugin-radio';
 
 /**
- * Default configuration settings
+ * Default configuration settings.
  * @type {Object}
  */
 export const defaultConfig = {
@@ -28,7 +28,7 @@ export const defaultConfig = {
 };
 
 /**
- * Set default configuration values
+ * Set default configuration values.
  * @param {Object} kiwi - The KiwiIRC instance
  */
 export function setDefaults(kiwi) {
@@ -36,13 +36,7 @@ export function setDefaults(kiwi) {
 }
 
 /**
- * Get or set a configuration setting
- * @param {string} name - The setting name
- * @param {*} newVal - The new value (optional)
- * @returns {*} - The current value of the setting
- */
-/**
- * Get or set a configuration setting
+ * Get or set a configuration setting.
  * @param {string} name - The setting name
  * @param {*} newVal - The new value (optional)
  * @returns {*} - The current value of the setting
@@ -52,7 +46,7 @@ export function setting(name, newVal) {
 }
 
 /**
- * Get a configuration setting
+ * Get a configuration setting.
  * @param {string} name - The setting name
  * @returns {*} - The value of the setting
  */
@@ -61,7 +55,7 @@ export function getSetting(name) {
 }
 
 /**
- * Set a configuration setting
+ * Set a configuration setting.
  * @param {string} name - The setting name
  * @param {*} value - The value to set
  * @returns {*} - The new value of the setting
@@ -71,11 +65,7 @@ export function setSetting(name, value) {
 }
 
 /**
- * Get the base path of the script
- * @returns {string} - The base path
- */
-/**
- * Get the base path of the script
+ * Get the base path of the script.
  * @returns {string} - The base path
  */
 function getBasePath() {

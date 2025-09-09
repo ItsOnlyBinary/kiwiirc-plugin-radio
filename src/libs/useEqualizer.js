@@ -30,7 +30,7 @@ export default function useEqualizer() {
 
     /**
      * Animate the canvas with audio waveform
-     * This function continuously updates the canvas to visualize the audio waveform
+     * This function continuously updates the canvas to visualise the audio waveform
      * It uses requestAnimationFrame for smooth animations
      */
     function animateCanvas(timestamp) {

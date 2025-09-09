@@ -49,7 +49,7 @@ import * as config from '@/config.js';
 const TextFormatting = kiwi.require('helpers/TextFormatting');
 
 /**
- * Define props for the component
+ * Define props for the component.
  * @type {Object}
  */
 const { radioAPI } = defineProps({
@@ -60,17 +60,17 @@ const { radioAPI } = defineProps({
 });
 
 /**
- * Add a class to an image when it's loaded
+ * Add a class to an image when it's loaded.
  */
 const imageLoaded = (event) => (event.target.classList.add('p-radio-loaded'));
 
 /**
- * Format channels as HTML links
+ * Format channels as HTML links.
  */
 const channelsHtml = (channels) => (channels || []).map((chan) => TextFormatting.linkifyChannels(chan)).join(', ');
 
 /**
- * Handle channel click events
+ * Handle channel click events.
  */
 const channelClick = (event) => {
     const channelName = event.target.getAttribute('data-channel-name');
@@ -93,7 +93,7 @@ const channelClick = (event) => {
 };
 
 /**
- * Play a station and close the station list on narrow screens
+ * Play a station and close the station list on narrow screens.
  */
 const playStationClose = (station) => {
     radioAPI.playStation(station);

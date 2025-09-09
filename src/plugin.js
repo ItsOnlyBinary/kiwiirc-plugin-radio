@@ -1,7 +1,7 @@
 /* global kiwi:true */
 /**
- * Main plugin file for the radio functionality
- * This file sets up the plugin, initializes the API, and registers UI components
+ * Main plugin file for the radio functionality.
+ * Sets up the plugin, initialises the API, and registers UI components.
  */
 import RadioBrowser from '@/components/RadioBrowser.vue';
 import RadioControls from '@/components/RadioControls.vue';
@@ -11,7 +11,7 @@ import translations from '@/translations';
 import * as config from '@/config.js';
 
 /**
- * Initialize the plugin
+ * Initialise the plugin.
  * @param {Object} kiwi - The KiwiIRC instance
  * @param {Object} logger - Logger instance
  */
@@ -22,7 +22,7 @@ kiwi.plugin('template', (kiwi, logger) => {
     // Add translations for the plugin
     kiwi.addTranslations(config.configBase, translations);
 
-    // Initialize the radio API
+    // Initialise the radio API
     const radioAPI = useRadioAPI();
     kiwi.pluginRadio = radioAPI;
 
@@ -31,11 +31,8 @@ kiwi.plugin('template', (kiwi, logger) => {
     kiwi.addView('RadioStations', RadioBrowser, { radioAPI });
 
     /**
-     * Handle user interaction to enable autoplay
-     */
-    /**
-     * Handle user interaction to enable autoplay
-     * Removes event listeners after first interaction and checks for autoplay
+     * Handle user interaction to enable autoplay.
+     * Removes event listeners after first interaction and checks for autoplay.
      */
     const handleUserInteracted = () => {
         // Remove event listeners after first interaction
@@ -53,8 +50,6 @@ kiwi.plugin('template', (kiwi, logger) => {
     };
 
     // Add event listeners for user interaction
-    // These listeners trigger the handleUserInteracted function
-    // They are removed after the first interaction to prevent multiple triggers
     kiwi.on('document.clicked', handleUserInteracted);
     kiwi.on('document.keydown', handleUserInteracted);
 });

@@ -5,13 +5,13 @@ import useEqualizer from '@/libs/useEqualizer';
 import * as config from '@/config.js';
 
 /**
- * Regex pattern to extract stream title from metadata
+ * Regex pattern to extract stream title from metadata.
  * @type {RegExp}
  */
 const streamTitleRegex = /StreamTitle='([^']*)'/;
 
 /**
- * Main radio API function
+ * Main radio API function.
  * @returns {Object} - Reactive API object with all radio functionality
  */
 export default function useRadioAPI() {
@@ -39,7 +39,7 @@ export default function useRadioAPI() {
         fetchShutdown: null,
 
         /**
-         * Getter for player volume
+         * Getter for player volume.
          * @returns {number} - Current player volume
          */
         get playerVolumeModel() {
@@ -47,7 +47,7 @@ export default function useRadioAPI() {
         },
 
         /**
-         * Setter for player volume
+         * Setter for player volume.
          * @param {number} value - New volume value
          */
         set playerVolumeModel(value) {
@@ -55,14 +55,14 @@ export default function useRadioAPI() {
         },
 
         /**
-         * Computed property for station name
+         * Computed property for station name.
          * @returns {string} - Name of the active station
          */
         stationName: computed(() => (api.stationActive ? api.stationActive.name : '')),
 
         /**
-         * Handle play event
-         * This function is called when playback starts
+         * Handle play event.
+         * Called when playback starts.
          */
         onPlay() {
             // Cancel any existing animation frame
@@ -94,8 +94,8 @@ export default function useRadioAPI() {
         },
 
         /**
-         * Handle pause event
-         * This function is called when playback is paused
+         * Handle pause event.
+         * Called when playback is paused.
          */
         onPause() {
             // Cancel any existing animation frame
@@ -116,8 +116,8 @@ export default function useRadioAPI() {
         },
 
         /**
-         * Handle error event
-         * This function is called when an error occurs during playback
+         * Handle error event.
+         * Called when an error occurs during playback.
          */
         onError() {
             // Handle playback errors
@@ -130,7 +130,7 @@ export default function useRadioAPI() {
         },
 
         /**
-         * Play a radio station
+         * Play a radio station.
          * @param {Object} selectedStation - The station to play
          * @param {boolean} disableCast - Whether to disable casting
          */
@@ -184,8 +184,8 @@ export default function useRadioAPI() {
         },
 
         /**
-         * Handle cast stream
-         * This function sets up a MediaSource for cast streams
+         * Handle cast stream.
+         * Sets up a MediaSource for cast streams.
          * @param {Object} station - The station to play
          */
         handleCastStream(station) {
@@ -225,8 +225,8 @@ export default function useRadioAPI() {
         },
 
         /**
-         * Process cast stream
-         * This function handles the stream data and metadata
+         * Process cast stream.
+         * Handles the stream data and metadata.
          * @param {Response} resp - The fetch response
          * @param {string} contentType - The content type of the stream
          * @param {number} metaInt - The metadata interval
@@ -315,8 +315,8 @@ export default function useRadioAPI() {
         },
 
         /**
-         * Handle direct stream
-         * This function sets up a direct stream URL
+         * Handle direct stream.
+         * Sets up a direct stream URL.
          * @param {Object} station - The station to play
          */
         handleDirectStream(station) {
@@ -325,7 +325,7 @@ export default function useRadioAPI() {
         },
 
         /**
-         * Pause the current station
+         * Pause the current station.
          */
         pauseStation() {
             this.playerElement.pause();
@@ -338,7 +338,7 @@ export default function useRadioAPI() {
         },
 
         /**
-         * Change the player volume
+         * Change the player volume.
          * @param {number} volume - The new volume level
          */
         changeVolume(volume) {
@@ -346,7 +346,7 @@ export default function useRadioAPI() {
         },
 
         /**
-         * Toggle mute on/off
+         * Toggle mute on/off.
          */
         toggleMute() {
             if (this.playerVolume === 0) {
@@ -360,7 +360,7 @@ export default function useRadioAPI() {
         },
 
         /**
-         * Make a station active
+         * Make a station active.
          * @param {Object} station - The station to activate
          */
         makeStationActive(station) {
@@ -373,7 +373,7 @@ export default function useRadioAPI() {
         },
 
         /**
-         * Toggle a station as starred/favorited
+         * Toggle a station as starred/favorited.
          * @param {Object} station - The station to toggle
          */
         toggleStarred(station) {
@@ -392,7 +392,7 @@ export default function useRadioAPI() {
         },
 
         /**
-         * Check if a station is starred
+         * Check if a station is starred.
          * @param {Object} station - The station to check
          * @returns {boolean} - True if starred, false otherwise
          */
@@ -402,7 +402,7 @@ export default function useRadioAPI() {
         },
 
         /**
-         * Skip to the next or previous station
+         * Skip to the next or previous station.
          * @param {number} direction - 1 for next, -1 for previous
          */
         skipStation(direction) {
@@ -434,7 +434,7 @@ export default function useRadioAPI() {
         },
 
         /**
-         * Get the index of a station in a list
+         * Get the index of a station in a list.
          * @param {Array} stations - The list of stations
          * @param {Object} station - The station to find
          * @returns {number} - The index of the station, or null if not found
@@ -452,7 +452,7 @@ export default function useRadioAPI() {
         },
 
         /**
-         * Get the active station
+         * Get the active station.
          * @returns {Object|null} - The active station or null if none
          */
         getActive() {
@@ -464,7 +464,7 @@ export default function useRadioAPI() {
         },
 
         /**
-         * Get starred stations
+         * Get starred stations.
          * @returns {Array} - List of starred stations
          */
         getStarred() {
@@ -473,7 +473,7 @@ export default function useRadioAPI() {
         },
 
         /**
-         * Toggle the stations list visibility
+         * Toggle the stations list visibility.
          */
         toggleStationsList() {
             const isOpen = !!document.body.querySelector('div.p-radio-browser');
@@ -481,7 +481,7 @@ export default function useRadioAPI() {
         },
 
         /**
-         * Open the stations list
+         * Open the stations list.
          */
         openStationsList() {
             if (config.setting('reloadOnOpen')) {
@@ -497,14 +497,14 @@ export default function useRadioAPI() {
         },
 
         /**
-         * Close the stations list
+         * Close the stations list.
          */
         closeStationsList() {
             kiwi.showView(null);
         },
 
         /**
-         * Check and set the active station
+         * Check and set the active station.
          */
         checkActiveStation() {
             if (this.stationActive) {
@@ -524,7 +524,7 @@ export default function useRadioAPI() {
         },
 
         /**
-         * Check for autoplay functionality
+         * Check for autoplay functionality.
          */
         checkForAutoplay() {
             const autoPlay = config.setting('autoPlay');
@@ -543,7 +543,7 @@ export default function useRadioAPI() {
         },
 
         /**
-         * Setup the audio processing chain
+         * Setup the audio processing chain.
          */
         setupAudioChain() {
             // Setup the audio chain
@@ -564,7 +564,7 @@ export default function useRadioAPI() {
         },
 
         /**
-         * Load stations from the JSON file
+         * Load stations from the JSON file.
          * @param {boolean} force - Whether to force reload
          */
         async loadStations(force = false) {
@@ -671,7 +671,7 @@ export default function useRadioAPI() {
 }
 
 /**
- * Concatenate two Uint8Array buffers
+ * Concatenate two Uint8Array buffers.
  * @param {Uint8Array} a - First buffer
  * @param {Uint8Array} b - Second buffer
  * @returns {Uint8Array} - Concatenated buffer
