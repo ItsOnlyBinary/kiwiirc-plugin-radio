@@ -10,7 +10,7 @@
         </div>
         <template v-for="(station, idx) in radioAPI.stationsList">
             <div :key="`station-img-${idx}`" class="p-radio-image">
-                <img :src="station.image" alt="" @load="imageLoaded" />
+                <img :src="station.image" alt="" @load="imageLoaded">
             </div>
             <div :key="`station-details-${idx}`" class="p-radio-details">
                 <div class="p-radio-details-controls">
@@ -114,7 +114,7 @@ const playStationClose = (station) => {
 
 .p-radio-image,
 .p-radio-details {
-    background-color: rgba(128, 128, 128, 0.2);
+    background-color: rgb(128, 128, 128, 0.2);
 }
 
 .p-radio-image {

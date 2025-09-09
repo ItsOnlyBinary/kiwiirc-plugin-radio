@@ -1,4 +1,3 @@
-<!-- eslint-disable vuejs-accessibility/no-distracting-elements -->
 <template>
     <div class="p-radio-controls" :class="{ 'p-radio-errored': radioAPI.stationsList.length === 0 }">
         <canvas ref="radioCanvas" />
@@ -33,7 +32,7 @@
                         max="1"
                         step="0.1"
                         class="p-radio-volume-slider"
-                    />
+                    >
                 </div>
             </div>
         </div>

@@ -227,8 +227,8 @@ onUnmounted(() => {
         display: inline-block;
         width: 2px;
         height: 1em;
-        white-space: nowrap;
         vertical-align: bottom;
+        white-space: nowrap;
         background-color: var(--comp-statebrowser-fg, #fff);
     }
 }
