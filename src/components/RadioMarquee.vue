@@ -194,7 +194,7 @@ const updateSizes = debounce(() => {
     if (!animateID && isOverflow.value && marqueeDivider.value) {
         animateStart();
     }
-}, 0);
+}, 1);
 
 /**
  * Clean up on component unmount
@@ -229,8 +229,8 @@ onUnmounted(() => {
         display: inline-block;
         width: 2px;
         height: 1em;
-        white-space: nowrap;
         vertical-align: bottom;
+        white-space: nowrap;
         background-color: var(--comp-statebrowser-fg, #fff);
     }
 }

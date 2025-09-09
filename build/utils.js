@@ -2,7 +2,7 @@ const os = require('os');
 const path = require('path');
 const { execSync } = require('child_process');
 
-module.exports.pathResolve = (...args) => path.resolve(process.cwd(), ...args);
+module.exports.pathResolve = (...args) => path.posix.join(process.cwd(), ...args);
 
 module.exports.getCommitHash = () => {
     let commitHash = 'unknown';
@@ -21,7 +21,7 @@ module.exports.getCommitHash = () => {
 module.exports.getNetworkIPs = () => {
     const interfaces = os.networkInterfaces();
     const ips = [];
-    /* eslint-disable no-restricted-syntax */
+
     for (const iface of Object.values(interfaces)) {
         for (const alias of iface) {
             if (alias.family === 'IPv4' && alias.address !== '127.0.0.1' && !alias.internal) {
@@ -59,5 +59,5 @@ module.exports.mapRange = (value, vMin, vMax, dMin, dMax) => {
     const vRange = vMax - vMin;
     const dRange = dMax - dMin;
 
-    return (vValue - vMin) * dRange / vRange + dMin;
+    return ((vValue - vMin) * dRange) / vRange + dMin;
 };

@@ -42,8 +42,23 @@ module.exports = (env, argv, config) => {
             extensions: ['.js', '.jsx', '.vue', '.json'],
         },
 
+        resolveLoader: {
+            modules: [
+                utils.pathResolve('node_modules'),
+                utils.pathResolve('build/plugins/webpack'),
+            ],
+        },
+
         externals: {
             vue: 'kiwi.Vue',
+            lodash: {
+                root: '_',
+            },
+        },
+
+        performance: {
+            maxEntrypointSize: 512 * utils.KiB, // 0.5MiB
+            maxAssetSize: 512 * utils.KiB, // 0.5MiB
         },
 
         plugins: [
@@ -98,9 +113,43 @@ module.exports = (env, argv, config) => {
                 },
 
                 {
-                    test: /\.js$/,
-                    exclude: (file) => /node_modules/.test(file),
-                    use: ['babel-loader'],
+                    test: /\.m?jsx?$/,
+                    exclude: (file) => {
+                        // always transpile js in vue files
+                        if (/\.vue\.jsx?$/.test(file)) {
+                            return false;
+                        }
+                        // Don't transpile node_modules
+                        return /node_modules/.test(file);
+                    },
+                    use: ['thread-loader', 'babel-loader'],
+                },
+
+                // images
+                {
+                    test: /\.(png|jpe?g|gif|webp)(\?.*)?$/,
+                    type: 'asset',
+                    generator: { filename: 'static/img/[name].[contenthash:8][ext][query]' },
+                },
+
+                // svg
+                {
+                    test: /\.(svg)(\?.*)?$/,
+                    use: ['vue-loader', 'svg-loader'],
+                },
+
+                // media
+                {
+                    test: /\.(mp4|webm|ogg|mp3|wav|flac|aac)(\?.*)?$/,
+                    type: 'asset',
+                    generator: { filename: 'static/media/[name].[contenthash:8][ext][query]' },
+                },
+
+                // fonts
+                {
+                    test: /\.(woff2?|eot|ttf|otf)(\?.*)?$/i,
+                    type: 'asset',
+                    generator: { filename: 'static/fonts/[name].[contenthash:8][ext][query]' },
                 },
             ],
         },

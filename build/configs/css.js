@@ -74,13 +74,17 @@ const cssRules = [
             },
             {
                 loader: 'sass-loader',
+                options: {
+                    api: 'modern-compiler',
+                },
             },
         ],
     },
 ];
 
-module.exports = (env, argv, config) => merge(config, {
-    module: {
-        rules: cssRules,
-    },
-});
+module.exports = (env, argv, config) =>
+    merge(config, {
+        module: {
+            rules: cssRules,
+        },
+    });

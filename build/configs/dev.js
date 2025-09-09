@@ -21,6 +21,7 @@ module.exports = (env, argv, config) => {
             open: false,
             host: '127.0.0.1',
             port: portNumber,
+            allowedHosts: ['localhost', '127.0.0.1'],
             headers: {
                 'Access-Control-Allow-Origin': '*',
             },

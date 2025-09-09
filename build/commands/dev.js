@@ -1,18 +1,19 @@
-const ora = require('ora');
-const chalk = require('chalk');
+const webpack = require('webpack');
 const minimist = require('minimist');
 const portfinder = require('portfinder');
-const webpack = require('webpack');
 const WebpackDevServer = require('webpack-dev-server');
 
 const utils = require('../utils');
 const webpackConfigFunc = require('../../webpack.config');
 
 const argv = minimist(process.argv.slice(2));
-const spinner = ora();
 
 (async () => {
+    const ora = await import('ora').then((m) => m.default);
+    const chalk = await import('chalk').then((m) => m.default);
     const webpackConfig = await webpackConfigFunc({ WEBPACK_SERVE: true }, argv);
+
+    const spinner = ora();
 
     console.log();
     spinner.text = 'Starting development server...';
@@ -41,7 +42,7 @@ const spinner = ora();
 
         console.log('   App running at:');
         if (host === 'localhost' || host.substring(0, 4) === '127.' || host === '0.0.0.0') {
-            const hostText = (host === '127.0.0.1') ? 'localhost' : host;
+            const hostText = host === '127.0.0.1' ? 'localhost' : host;
             console.log(`     - Local:   ${chalk.cyan(`${protocol}://${hostText}:${port}`)}`);
 
             if (host !== '0.0.0.0') {

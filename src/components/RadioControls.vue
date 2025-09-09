@@ -32,7 +32,7 @@
                         max="1"
                         step="0.1"
                         class="p-radio-volume-slider"
-                    />
+                    >
                 </div>
             </div>
         </div>
@@ -67,8 +67,9 @@
 
 <script setup>
 /* global kiwi:true */
+
 import { onMounted, ref } from 'vue';
-import RadioMarquee from '@/components/RadioMarquee.vue';
+import RadioMarquee from '@/components/RadioMarquee';
 
 import * as config from '@/config.js';
 

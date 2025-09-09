@@ -1,5 +1,6 @@
 module.exports = {
-    printWidth: 120,
+    plugins: ['prettier-plugin-jsdoc'],
+    printWidth: 100,
     quoteProps: 'consistent',
     semi: true,
     singleQuote: true,
