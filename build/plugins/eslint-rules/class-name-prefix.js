@@ -3,21 +3,9 @@ const pkg = require('../../../package.json');
 const pkgClass = pkg.name.replace(/^kiwiirc-/, '');
 const pkgClassShort = pkgClass.replace(/^plugin-/, 'p-');
 
-const allowedPrefixes = [
-    'kiwi-',
-    'u-',
+const allowedPrefixes = ['kiwi-', 'kc-', 'u-', `${pkgClass}-`];
 
-    `${pkgClass}-`,
-];
-
-const specialPrefixes = [
-    // IRC colour classes
-    'irc-fg-',
-    'irc-bg-',
-
-    // Special exception for google recaptcha -  welcome screen.
-    'g-',
-];
+const specialPrefixes = ['irc-fg-', 'irc-bg-', 'g-'];
 
 if (pkgClass !== pkgClassShort) {
     allowedPrefixes.push(`${pkgClassShort}-`);
@@ -25,36 +13,53 @@ if (pkgClass !== pkgClassShort) {
 
 const prefixes = [...allowedPrefixes, ...specialPrefixes];
 
-const reportMessage = `Expected class name to start with one of ['${allowedPrefixes.join('\', \'')}'] ({{ class }})`;
+const reportMessage = `Expected class name to start with one of ['${allowedPrefixes.join("', '")}'] ({{ class }})`;
 
 module.exports = {
-    meta: {
-        docs: {
-            description: `html class names must start one of ['${allowedPrefixes.join('\', \'')}']`,
-            category: 'base',
-            url: null,
+    rules: {
+        'class-name-prefix': {
+            meta: {
+                type: 'suggestion',
+                docs: {
+                    description: `HTML class names must start with one of ['${allowedPrefixes.join("', '")}']`,
+                    category: 'Stylistic Issues',
+                    recommended: true,
+                    url: null,
+                },
+                schema: [],
+                messages: {
+                    invalidClass: reportMessage,
+                },
+            },
+            create(context) {
+                const sourceCode = context.getSourceCode();
+
+                return sourceCode.parserServices.defineTemplateBodyVisitor({
+                    "VAttribute[key.name='class']"(node) {
+                        if (!node.value || node.value.type !== 'VLiteral') {
+                            return;
+                        }
+
+                        const classes = node.value.value.split(' ');
+                        classes.forEach((c) => {
+                            // Ignore empty and fontawesome classes
+                            if (!c || c === 'fa' || c.startsWith('fa-')) {
+                                return;
+                            }
+                            if (prefixes.every((p) => !c.startsWith(p))) {
+                                context.report({
+                                    node,
+                                    messageId: 'invalidClass',
+                                    data: {
+                                        class: c,
+                                    },
+                                    severity: 1,
+                                });
+                            }
+                        });
+                    },
+                });
+            },
         },
-        fixable: null,
-        schema: [],
     },
-    create: (context) => context.parserServices.defineTemplateBodyVisitor({
-        'VAttribute[key.name=\'class\']': (node) => {
-            const classes = node.value.value.split(' ');
-            classes.forEach((c) => {
-                // Ignore empty and fontawesome classes
-                if (!c || c === 'fa' || c.startsWith('fa-')) {
-                    return;
-                }
-                if (prefixes.every((p) => !c.startsWith(p))) {
-                    context.report({
-                        node,
-                        message: reportMessage,
-                        data: {
-                            class: c,
-                        },
-                    });
-                }
-            });
-        },
-    }),
 };
