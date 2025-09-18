@@ -37,6 +37,16 @@ module.exports = (env, argv, config) => {
         optimization: {
             minimize: true,
             minimizer: [new TerserPlugin(terserOptions), new CssMinimizerPlugin()],
+            // splitChunks: {
+            //     cacheGroups: {
+            //         worker: {
+            //             test: /hls\.js/,
+            //             name: 'hls.worker',
+            //             chunks: 'all',
+            //             enforce: true,
+            //         },
+            //     },
+            // },
         },
     };
 

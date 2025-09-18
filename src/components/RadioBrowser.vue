@@ -10,7 +10,7 @@
         </div>
         <template v-for="(station, idx) in radioAPI.stationsList">
             <div :key="`station-img-${idx}`" class="p-radio-image">
-                <img :src="station.image" alt="" @load="imageLoaded" />
+                <img :src="station.image" alt="" @load="imageLoaded">
             </div>
             <div :key="`station-details-${idx}`" class="p-radio-details">
                 <div class="p-radio-details-controls">
@@ -44,11 +44,14 @@
 
 <script setup>
 /* global kiwi:true */
-
 import * as config from '@/config.js';
 
 const TextFormatting = kiwi.require('helpers/TextFormatting');
 
+/**
+ * Define props for the component.
+ * @type {Object}
+ */
 const { radioAPI } = defineProps({
     radioAPI: {
         type: Object,
@@ -56,10 +59,19 @@ const { radioAPI } = defineProps({
     },
 });
 
+/**
+ * Add a class to an image when it's loaded.
+ */
 const imageLoaded = (event) => (event.target.classList.add('p-radio-loaded'));
 
+/**
+ * Format channels as HTML links.
+ */
 const channelsHtml = (channels) => (channels || []).map((chan) => TextFormatting.linkifyChannels(chan)).join(', ');
 
+/**
+ * Handle channel click events.
+ */
 const channelClick = (event) => {
     const channelName = event.target.getAttribute('data-channel-name');
     if (channelName) {
@@ -67,17 +79,22 @@ const channelClick = (event) => {
         const buffer = kiwi.state.getBufferByName(network.id, channelName);
 
         if (!buffer) {
+            // Add buffer and join channel if it doesn't exist
             kiwi.state.addBuffer(network.id, channelName);
             network.ircClient.join(channelName);
         }
 
         if (buffer || kiwi.state.ui.is_narrow) {
+            // Set active buffer and close station list
             kiwi.state.setActiveBuffer(network.id, channelName);
             radioAPI.closeStationsList();
         }
     }
 };
 
+/**
+ * Play a station and close the station list on narrow screens.
+ */
 const playStationClose = (station) => {
     radioAPI.playStation(station);
     if (kiwi.state.ui.is_narrow) {
@@ -97,7 +114,7 @@ const playStationClose = (station) => {
 
 .p-radio-image,
 .p-radio-details {
-    background-color: rgba(128, 128, 128, 0.2);
+    background-color: rgb(128, 128, 128, 0.2);
 }
 
 .p-radio-image {

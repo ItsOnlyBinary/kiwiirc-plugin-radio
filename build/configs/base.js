@@ -24,7 +24,8 @@ module.exports = (env, argv, config) => {
         context: process.cwd(),
 
         entry: {
-            app: './src/plugin.js',
+            [pkg.name.replace(/^kiwiirc-/, '')]: './src/plugin.js',
+            [pkg.name.replace(/^kiwiirc-/, '') + '-hls']: './src/hls.js',
         },
 
         devtool: sourceMap,
@@ -32,7 +33,6 @@ module.exports = (env, argv, config) => {
         output: {
             path: utils.pathResolve('dist'),
             publicPath: 'auto',
-            filename: pkg.name.replace(/^kiwiirc-/, '') + '.js',
         },
 
         resolve: {
@@ -76,8 +76,12 @@ module.exports = (env, argv, config) => {
                         to: utils.pathResolve('dist/plugin-radio/'),
                         toType: 'dir',
                         globOptions: {
-                            ignore: ['.*', '**/stations.json'],
+                            ignore: ['.*', '**/stations.json', '**/stations.local.json'],
                         },
+                    },
+                    {
+                        from: utils.pathResolve('node_modules/hls.js/dist/hls.worker.js'),
+                        to: utils.pathResolve('dist/plugin-radio/hls.worker.js'),
                     },
                 ],
             }),
@@ -110,7 +114,6 @@ module.exports = (env, argv, config) => {
                         },
                     ],
                 },
-
                 {
                     test: /\.m?jsx?$/,
                     exclude: (file) => {

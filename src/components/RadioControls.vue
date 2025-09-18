@@ -2,23 +2,23 @@
     <div class="p-radio-controls" :class="{ 'p-radio-errored': radioAPI.stationsList.length === 0 }">
         <canvas ref="radioCanvas" />
         <div class="p-radio-buttons">
-            <div :title="$t('plugin-radio:previous')" @click="radioAPI.skipStation(-1)">
+            <div :title="$t('plugin-radio:previous')" @click="buttonClick($event); radioAPI.skipStation(-1)">
                 <i class="fa fa-fast-backward fa-fw" aria-hidden="true" />
             </div>
-            <div v-if="radioAPI.playerPlaying" :title="$t('plugin-radio:pause')" @click="radioAPI.pauseStation()">
+            <div v-if="radioAPI.playerPlaying" :title="$t('plugin-radio:pause')" @click="buttonClick($event); radioAPI.pauseStation()">
                 <i class="fa fa-pause fa-fw" aria-hidden="true" />
             </div>
-            <div v-else :title="$t('plugin-radio:play')" @click="radioAPI.playStation()">
+            <div v-else :title="$t('plugin-radio:play')" @click="buttonClick($event); radioAPI.playStation()">
                 <i class="fa fa-play fa-fw" aria-hidden="true" />
             </div>
-            <div :title="$t('plugin-radio:next')" @click="radioAPI.skipStation(1)">
+            <div :title="$t('plugin-radio:next')" @click="buttonClick($event); radioAPI.skipStation(1)">
                 <i class="fa fa-fast-forward fa-fw" aria-hidden="true" />
             </div>
-            <div :title="$t('plugin-radio:stationsList')" @click="radioAPI.toggleStationsList()">
+            <div :title="$t('plugin-radio:stationsList')" @click="buttonClick($event); radioAPI.toggleStationsList()">
                 <i class="fa fa-th-list fa-fw" aria-hidden="true" />
             </div>
             <div class="p-radio-volume">
-                <div class="p-radio-mute" :title="$t('plugin-radio:mute')" @click="radioAPI.toggleMute()">
+                <div class="p-radio-mute" :title="$t('plugin-radio:mute')" @click="buttonClick($event); radioAPI.toggleMute()">
                     <i v-if="radioAPI.playerVolume === 0" class="fa fa-volume-off fa-fw" aria-hidden="true" />
                     <i v-else-if="radioAPI.playerVolume >= 0.5" class="fa fa-volume-up fa-fw" aria-hidden="true" />
                     <i v-else class="fa fa-volume-down fa-fw" aria-hidden="true" />
@@ -32,12 +32,26 @@
                         max="1"
                         step="0.1"
                         class="p-radio-volume-slider"
-                    />
+                    >
                 </div>
             </div>
         </div>
-        <div :class="{ 'p-radio-errored': radioAPI.stationErrored }" class="p-radio-station">
-            {{ radioAPI.stationName || $t('plugin-radio:stationNone') }}
+        <RadioMarquee
+            v-if="config.setting('showMarquee')"
+            :station-name="radioAPI.stationName || TextFormatting.t('plugin-radio:stationNone')"
+            :song-title="radioAPI.songTitle"
+            class="p-radio-marquee"
+            :class="{ 'p-radio-errored': radioAPI.stationErrored }"
+        />
+        <div v-else class="p-radio-title">
+            <div>
+                {{ radioAPI.stationName || TextFormatting.t('plugin-radio:stationNone') }}
+            </div>
+            <transition-expand>
+                <div v-if="radioAPI.songTitle">
+                    {{ radioAPI.songTitle }}
+                </div>
+            </transition-expand>
         </div>
         <audio
             ref="radioAudio"
@@ -46,14 +60,26 @@
             style="display: none"
             @play="radioAPI.onPlay"
             @pause="radioAPI.onPause"
+            @ended="radioAPI.onPause"
             @error="radioAPI.onError"
         />
     </div>
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue';
+/* global kiwi:true */
 
+import { onMounted, ref } from 'vue';
+import RadioMarquee from '@/components/RadioMarquee';
+
+import * as config from '@/config.js';
+
+const TextFormatting = kiwi.require('helpers/TextFormatting');
+
+/**
+ * Define props for the component
+ * @type {Object}
+ */
 const { radioAPI } = defineProps({
     radioAPI: {
         type: Object,
@@ -61,16 +87,46 @@ const { radioAPI } = defineProps({
     },
 });
 
-const radioAudio = ref(null);
-const radioCanvas = ref(null);
+/**
+ * References to DOM elements
+ */
+const radioAudio = ref(null); // Reference to the audio element
+const radioCanvas = ref(null); // Reference to the canvas element
 
+let clickTimeout = null;
+function buttonClick(event) {
+    if (!event.target) {
+        return;
+    }
+    if (clickTimeout) {
+        clearTimeout(clickTimeout.id);
+        buttonClickReset(clickTimeout.target);
+        clickTimeout = null;
+    }
+    event.target.style.color = 'var(--brand-primary, #42b992)';
+
+    clickTimeout = {
+        id: setTimeout(() => buttonClickReset(event.target), 500),
+        target: event.target,
+    };
+}
+
+function buttonClickReset(target) {
+    target.style.color = null;
+}
+
+/**
+ * Lifecycle hook that runs when the component is mounted
+ */
 onMounted(() => {
+    // Set the audio element in the radioAPI
     radioAPI.playerElement = radioAudio.value;
 
-    // Store canvas element
+    // Initialize canvas for wave visualization
     radioAPI.waveData.canvas = radioCanvas.value;
     radioAPI.waveData.canvasCtx = radioAPI.waveData.canvas.getContext('2d');
 
+    // Check for autoplay functionality
     radioAPI.checkForAutoplay();
 });
 </script>
@@ -111,8 +167,8 @@ onMounted(() => {
 
 .p-radio-volume-container {
     position: absolute;
-    top: 10px;
-    left: -4px;
+    top: 2px;
+    left: -2px;
     display: none;
     transform: rotate(270deg);
     transform-origin: 0% 0%;
@@ -125,7 +181,6 @@ onMounted(() => {
 .p-radio-volume-slider {
     width: 80px;
     height: 6px;
-    margin: 12px;
     appearance: none;
     cursor: pointer;
     background: transparent;
@@ -162,6 +217,10 @@ onMounted(() => {
         border: none;
         border-radius: 50%;
     }
+}
+
+.p-radio-title {
+    padding: 0 6px;
 }
 
 .p-radio-errored {
