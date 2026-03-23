@@ -3,25 +3,25 @@
         <canvas ref="radioCanvas" />
         <div class="p-radio-buttons">
             <div :title="$t('plugin-radio:previous')" @click="buttonClick($event); radioAPI.skipStation(-1)">
-                <i class="fa fa-fast-backward fa-fw" aria-hidden="true" />
+                <svg-icon icon="fa-solid fa-fast-backward" fixed-width />
             </div>
             <div v-if="radioAPI.playerPlaying" :title="$t('plugin-radio:pause')" @click="buttonClick($event); radioAPI.pauseStation()">
-                <i class="fa fa-pause fa-fw" aria-hidden="true" />
+                <svg-icon icon="fa-solid fa-pause" fixed-width />
             </div>
             <div v-else :title="$t('plugin-radio:play')" @click="buttonClick($event); radioAPI.playStation()">
-                <i class="fa fa-play fa-fw" aria-hidden="true" />
+                <svg-icon icon="fa-solid fa-play" fixed-width />
             </div>
             <div :title="$t('plugin-radio:next')" @click="buttonClick($event); radioAPI.skipStation(1)">
-                <i class="fa fa-fast-forward fa-fw" aria-hidden="true" />
+                <svg-icon icon="fa-solid fa-fast-forward" fixed-width />
             </div>
             <div :title="$t('plugin-radio:stationsList')" @click="buttonClick($event); radioAPI.toggleStationsList()">
-                <i class="fa fa-th-list fa-fw" aria-hidden="true" />
+                <svg-icon icon="fa-solid fa-th-list" fixed-width />
             </div>
             <div class="p-radio-volume">
                 <div class="p-radio-mute" :title="$t('plugin-radio:mute')" @click="buttonClick($event); radioAPI.toggleMute()">
-                    <i v-if="radioAPI.playerVolume === 0" class="fa fa-volume-off fa-fw" aria-hidden="true" />
-                    <i v-else-if="radioAPI.playerVolume >= 0.5" class="fa fa-volume-up fa-fw" aria-hidden="true" />
-                    <i v-else class="fa fa-volume-down fa-fw" aria-hidden="true" />
+                    <svg-icon v-if="radioAPI.playerVolume === 0" icon="fa-solid fa-volume-off" fixed-width />
+                    <svg-icon v-else-if="radioAPI.playerVolume >= 0.5" icon="fa-solid fa-volume-up" fixed-width />
+                    <svg-icon v-else icon="fa-solid fa-volume-down" fixed-width />
                 </div>
                 <div class="p-radio-volume-container">
                     <input
@@ -134,6 +134,9 @@ onMounted(() => {
 <style lang="scss">
 .p-radio-controls {
     position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
     padding-bottom: 10px;
 
     canvas {
@@ -149,6 +152,7 @@ onMounted(() => {
 .p-radio-buttons {
     display: inline-flex;
     gap: 4px;
+    justify-content: center;
     user-select: none;
 
     > div {

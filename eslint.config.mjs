@@ -18,9 +18,6 @@ export default [
     js.configs.recommended,
     pluginImport.flatConfigs.recommended,
     pluginStylistic.configs.all,
-    // pluginStylistic.configs['disable-legacy'],
-    // pluginStylistic.configs['customize'],
-    // pluginStylistic.configs['all'],
     ...pluginVueA11y.configs['flat/recommended'],
     ...pluginVue.configs['flat/recommended'],
     ...kiwiirc.configs.recommended,
@@ -35,7 +32,7 @@ export default [
                 ...globals.browser,
             },
             parser: vueParser,
-            ecmaVersion: 'latest',
+            ecmaVersion: 2020,
             sourceType: 'module',
             parserOptions: {
                 parser: '@babel/eslint-parser',
@@ -106,13 +103,15 @@ export default [
             /*
                 Import Rules
             */
-            'import/extensions': ['error', 'ignorePackages'],
+            'import/extensions': ['error', 'ignorePackages', {
+                js: 'never',
+                vue: 'never',
+            }],
             'import/no-cycle': 'off',
             'import/no-unresolved': ['error', {
                 ignore: [
-                    // These files will not exist if lint is run before the first build
-                    '/res/locales/available\\.json$',
-                    '/static/locales/\\S+\\.json$',
+                    // virtual path to locales
+                    '^locale:',
                 ],
             }],
             'import/prefer-default-export': 'off',
@@ -133,7 +132,6 @@ export default [
                 code: 120,
                 comments: 120,
                 ignoreRegExpLiterals: true,
-                ignoreStrings: true,
                 ignoreTemplateLiterals: true,
                 ignoreUrls: true,
                 tabWidth: 4,
@@ -193,6 +191,14 @@ export default [
             '@stylistic/newline-per-chained-call': 0,
             '@stylistic/padded-blocks': 0,
             '@stylistic/wrap-regex': 0,
+
+            /*
+                Accessibility Rules
+            */
+            'vuejs-accessibility/click-events-have-key-events': 'off',
+            'vuejs-accessibility/interactive-supports-focus': 'off',
+            'vuejs-accessibility/mouse-events-have-key-events': 'off',
+            'vuejs-accessibility/media-has-caption': 'off',
         },
 
     },
@@ -218,6 +224,16 @@ export default [
                 Vue Rules
             */
             'vue/max-attributes-per-line': 'off',
+            'vue/max-len': ['error', {
+                code: 120,
+                comments: 120,
+                ignoreRegExpLiterals: true,
+                ignoreStrings: true,
+                ignoreTemplateLiterals: true,
+                ignoreUrls: true,
+                tabWidth: 4,
+                template: 120,
+            }],
             'vue/multi-word-component-names': 'off',
             'vue/multiline-html-element-content-newline': 'off',
             'vue/no-unused-components': 'off',
@@ -227,12 +243,6 @@ export default [
             'vue/require-prop-types': 'off',
             'vue/singleline-html-element-content-newline': 'off',
             'vue/v-on-event-hyphenation': 'off',
-
-            /*
-                Vue 2 Rules
-            */
-            'vue/no-v-for-template-key': 'error',
-            'vue/no-v-for-template-key-on-child': 'off',
 
             /*
                 Stylistic Rules
@@ -245,12 +255,9 @@ export default [
                 Accessibility Rules
             */
             'vuejs-accessibility/anchor-has-content': 'off',
-            'vuejs-accessibility/click-events-have-key-events': 'off',
             'vuejs-accessibility/form-control-has-label': 'off',
             'vuejs-accessibility/iframe-has-title': 'off',
-            'vuejs-accessibility/interactive-supports-focus': 'off',
             'vuejs-accessibility/label-has-for': 'off',
-            'vuejs-accessibility/media-has-caption': 'off',
             'vuejs-accessibility/no-static-element-interactions': 'off',
         },
     },

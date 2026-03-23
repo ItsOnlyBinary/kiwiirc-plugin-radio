@@ -23,6 +23,16 @@ kiwi.plugin('plugin-radio', (kiwi, logger) => {
     // Add translations for the plugin
     kiwi.addTranslations(config.configBase, translations);
 
+    import(/* webpackMode: "eager" */ '@/libs/iconLibrary');
+
+    /* eslint-disable no-undef */
+    if (module?.hot) {
+        module.hot.accept('./libs/iconLibrary.js', () => {
+            import(/* webpackMode: "eager" */ '@/libs/iconLibrary');
+        });
+    }
+    /* eslint-enable no-undef */
+
     // Initialise the radio API
     const radioAPI = useRadioAPI();
     kiwi.pluginRadio = radioAPI;

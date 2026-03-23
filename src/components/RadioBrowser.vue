@@ -5,31 +5,28 @@
             :class="{ 'p-radio-browser-close--force': config.setting('forceShowClose') }"
         >
             <div class="u-button-secondary" :title="$t('close')" @click="radioAPI.closeStationsList()">
-                <i aria-hidden="true" class="fa fa-times" />
+                <svg-icon icon="fa-solid fa-xmark" />
             </div>
         </div>
-        <template v-for="(station, idx) in radioAPI.stationsList">
-            <div :key="`station-img-${idx}`" class="p-radio-image">
+        <template v-for="(station, idx) in radioAPI.stationsList" :key="`station-img-${idx}`">
+            <div class="p-radio-image">
                 <img :src="station.image" alt="" @load="imageLoaded">
             </div>
-            <div :key="`station-details-${idx}`" class="p-radio-details">
+            <div class="p-radio-details">
                 <div class="p-radio-details-controls">
                     <div class="p-radio-details-favourite" @click="radioAPI.toggleStarred(station)">
-                        <i
-                            :class="[radioAPI.isStarred(station) ? 'fa-star' : 'fa-star-o']"
-                            class="fa"
-                            aria-hidden="true"
-                        />
+                        <!-- svg-icons: fas-star, far-star -->
+                        <svg-icon :icon="[radioAPI.isStarred(station) ? 'fa-solid' : 'fa-regular', 'fa-star']" />
                     </div>
                     <div
                         v-if="radioAPI.playerPlaying && radioAPI.stationActive === station"
                         class="p-radio-details-play"
                         @click="radioAPI.pauseStation()"
                     >
-                        <i class="fa fa-pause" aria-hidden="true" />
+                        <svg-icon icon="fa-solid fa-pause" fixed-width />
                     </div>
                     <div v-else class="p-radio-details-play" @click="playStationClose(station)">
-                        <i class="fa fa-play" aria-hidden="true" />
+                        <svg-icon icon="fa-solid fa-play" fixed-width />
                     </div>
                 </div>
                 <span class="p-radio-details-title">{{ station.name }}</span>
